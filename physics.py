@@ -6,7 +6,7 @@ import scipy as sp
 import scipy.constants
 import numpy as np
 
-def aceleracion_gravitacional(ri, rj, mj):
+def gravitational_acceleration(ri, rj, mj):
     """Newton equation of motion for 2 particles i and j.
 
     :param ri: position vector of particle i
