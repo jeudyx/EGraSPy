@@ -14,6 +14,9 @@ def gravitational_acceleration(ri, rj, mj):
     :param mj: mass (in kg) of particle j
     :return: Acceleration of particle i by a particle j
     """
+
+    # Pending: considerations on smooth length
+
     diff = rj - ri
     return sp.constants.G * mj * (diff / (np.linalg.norm(diff) ** 3))
 

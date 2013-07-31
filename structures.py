@@ -68,6 +68,6 @@ class OctreeNode(object):
         return self.center_of_mass / parsec
 
     @property
-    def is_leave(self):
-        return len(self.childnodes) > 0
+    def is_leaf(self):
+        return len(self.childnodes) == 0
 

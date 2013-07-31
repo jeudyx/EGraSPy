@@ -5,7 +5,7 @@ __author__ = 'jeudy'
 import numpy as np
 import unittest
 import physics
-
+from structures import OctreeNode
 
 class TestPhysics(unittest.TestCase):
 
@@ -17,3 +17,6 @@ class TestPhysics(unittest.TestCase):
     def test_zero_mass_acceleration(self):
         self.assertEqual(np.linalg.norm(physics.gravitational_acceleration(self.ri, self.rj, 0)), 0.)
 
+    def test_is_leaf(self):
+        node = OctreeNode()
+        self.assertTrue(node.is_leaf)
