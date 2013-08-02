@@ -58,3 +58,14 @@ def potential_energy(mi, mj, ri, rj):
 #     epot /= 2
 #
 #     return ekin + epot
+
+def center_of_mass(mass1, position1, mass2, position2):
+    """
+
+    :param mass1: Mass of first body (kg)
+    :param position1: Position of first body (numpy array 3D)
+    :param mass2: Mass of second body (kg)
+    :param position2: Position of second body (numpy array 3D)
+    :return:
+    """
+    return ((mass1 * position1) + (mass2 * position2)) / (mass1 + mass2)
