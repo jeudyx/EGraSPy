@@ -61,6 +61,7 @@ class OctreeNode(object):
         self.parent_node = None
         self._level = 0
         self._limiting_cube = Cube(distance_to_center, center)
+        self.particle = None
 
     @property
     def normalized_mass(self):
@@ -77,22 +78,51 @@ class OctreeNode(object):
     def contains_particle(self, particle):
         return self._limiting_cube.contains_point(particle.position)
 
+    def create_empty_child_nodes(self):
+        direction_matrix = np.array([[1., 1., 1.], [-1., 1., 1.], [1., -1., 1.], [1., 1., -1.], [-1., -1., 1.], [1., -1., -1.], [-1., 1., -1.], [-1., -1., -1.]])
+
+        for i in range(0, 8):
+            child_center = (self._limiting_cube.center + self._limiting_cube.distance_to_center/2.) \
+                           * direction_matrix[i]
+            self.childnodes.append(OctreeNode(self._limiting_cube.distance_to_center/2., child_center))
+
     def insert_particle(self, particle):
         if self.mass == 0:
             # Node was empty, insert here
             self.mass = particle.mass
             self.center_of_mass = particle.position
+            self.particle = particle
         elif self.is_leaf:
             # External node
             # If node x is an external node, say containing a body named c,
             # then there are two bodies b and c in the same region
             # Subdivide the region further by creating 8 children.
-            for i in range(0, 8):
-                self.childnodes.append(OctreeNode())
+
+            self.create_empty_child_nodes()
+
+            # Then, recursively insert both b and c into the appropriate quadrant(s).
+            # Since b and c may still end up in the same quadrant,
+            # there may be several subdivisions during a single insertion.
+
+            for child_node in self.childnodes:
+                # Try to insert new particle
+                if child_node.contains_particle(particle):
+                    child_node.insert_particle(particle)
+
+                if child_node.contains_particle(self.particle):
+                    child_node.insert_particle(self.particle)
+                    self.particle = None # Should I remove this?
+
+            # Finally, update the center-of-mass and total mass of x
+            self.center_of_mass = physics.center_of_mass(self.mass, self.center_of_mass, particle.mass,
+                                                         particle.position)
+            self.mass += particle.mass
+
         else:
             # Internal node
             # If node is an internal node, update the center-of-mass and total mass of node.
-            self.center_of_mass = physics.center_of_mass(self.mass, self.center_of_mass, particle.mass, particle.position)
+            self.center_of_mass = physics.center_of_mass(self.mass, self.center_of_mass, particle.mass,
+                                                         particle.position)
             self.mass += particle.mass
             # Recursively insert the body b in the appropriate quadrant.
             for child_node in self.childnodes:
