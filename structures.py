@@ -104,14 +104,22 @@ class OctreeNode(object):
             # Since b and c may still end up in the same quadrant,
             # there may be several subdivisions during a single insertion.
 
+            found_new = False
+            found_existing = False
+
             for child_node in self.childnodes:
                 # Try to insert new particle
-                if child_node.contains_particle(particle):
+                if child_node.contains_particle(particle) and not found_new:
                     child_node.insert_particle(particle)
+                    found_new = True
 
-                if child_node.contains_particle(self.particle):
+                if child_node.contains_particle(self.particle) and not found_existing:
                     child_node.insert_particle(self.particle)
                     self.particle = None # Should I remove this?
+                    found_existing = True
+
+                if found_existing and found_new:
+                    break
 
             # Finally, update the center-of-mass and total mass of x
             self.center_of_mass = physics.center_of_mass(self.mass, self.center_of_mass, particle.mass,
@@ -150,14 +158,15 @@ class Cube(object):
     def __create_vertices__(self):
         """Populate the vertices based on the distance_to_center"""
 
-        direction_matrix = np.array([-1., -1., 1., -1., 1., 1., 1., 1., 1.,
-                                    1., -1., 1., -1., -1., -1., -1., 1., -1.,
-                                    1., 1., -1., 1., -1., -1.])
+        direction_matrix = np.array([[-1., -1., 1.], [-1., 1., 1.], [1., 1., 1.],
+                                    [1., -1., 1.], [-1., -1., -1.], [-1., 1., -1.],
+                                    [1., 1., -1.], [1., -1., -1.]])
 
         for i in range(0, 8):
-            self.vertices.append([self.distance_to_center + self.center])
+            vertex = [self.distance_to_center + (self.center * direction_matrix[i])]
+            self.vertices.append(vertex * direction_matrix[i])
 
-        self.vertices = (np.array(self.vertices).reshape(24) * direction_matrix).reshape(8,3)
+        self.vertices = np.array(self.vertices)
 
     def contains_point(self, point):
         """
