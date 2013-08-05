@@ -96,11 +96,14 @@ class OctreeNode(object):
 
     def insert_particle(self, particle):
         if self.mass == 0:
-            # Node was empty, insert here
-            self.mass = particle.mass
-            self.center_of_mass = particle.position
-            self.particle = particle
-            self.n_particles = 1
+            if self._limiting_cube.contains_point(particle.position):
+                # Node was empty, insert here
+                self.mass = particle.mass
+                self.center_of_mass = particle.position
+                self.particle = particle
+                self.n_particles = 1
+            else:
+                raise Exception("Particle was not contained by root empty node. Particle position: %s" % particle.position)
         elif self.is_leaf:
             # External node
             # If node x is an external node, say containing a body named c,

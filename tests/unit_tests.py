@@ -63,6 +63,11 @@ class TestOctree(unittest.TestCase):
         self.assertEquals(np.linalg.norm(node.normalized_center_of_mass_parsec),
                           np.linalg.norm(self.particle.normalized_position_parsecs))
 
+    def test_fails_particle_not_contained(self):
+        p = Particle(200., 200., 200., 0., 0., 0., 0., SUN_MASS)
+        with self.assertRaises(Exception):
+            self.node.insert_particle(p)
+
     def test_is_leaf(self):
         node = OctreeNode()
         self.assertTrue(node.is_leaf)
