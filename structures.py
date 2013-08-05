@@ -35,6 +35,9 @@ class Particle(object):
         self.mass = m
         self.density = rho
 
+    def __str__(self):
+        return "position: %s, velocity: %s, mass: %s, density: %s"% (self.position, self.velocity, self.normalized_mass, self.position)
+
     @property
     def normalized_mass(self):
         """Normalized mass with respect to Sun mass"""
@@ -54,14 +57,15 @@ class Particle(object):
 class OctreeNode(object):
     """Representation of an octree node"""
 
-    def __init__(self, distance_to_center=0, center=np.array([0., 0., 0.])):
+    def __init__(self, distance_to_center=0, center=np.array([0., 0., 0.]), parent=None):
         self.childnodes = []
         self.mass = 0.
         self.center_of_mass = np.array([0., 0., 0.])
-        self.parent_node = None
-        self._level = 0
+        self.parent_node = parent
+        self._level = 0 if not parent else parent._level + 1
         self._limiting_cube = Cube(distance_to_center, center)
         self.particle = None
+        self.n_particles = 0
 
     @property
     def normalized_mass(self):
@@ -75,16 +79,20 @@ class OctreeNode(object):
     def is_leaf(self):
         return len(self.childnodes) == 0 # and self.particle is not None
 
+    def __str__(self):
+        return "Level: %s, n_particles: %s. Total mass: %s, COM: %s" % (self._level, self.n_particles, self.normalized_mass, self.center_of_mass)
+
     def contains_particle(self, particle):
         return self._limiting_cube.contains_point(particle.position)
 
     def create_empty_child_nodes(self):
-        direction_matrix = np.array([[1., 1., 1.], [-1., 1., 1.], [1., -1., 1.], [1., 1., -1.], [-1., -1., 1.], [1., -1., -1.], [-1., 1., -1.], [-1., -1., -1.]])
+        direction_matrix = np.array([[1., 1., 1.], [-1., 1., 1.], [1., -1., 1.], [1., 1., -1.],
+                                     [-1., -1., 1.], [1., -1., -1.], [-1., 1., -1.], [-1., -1., -1.]])
 
         for i in range(0, 8):
-            child_center = (self._limiting_cube.center + self._limiting_cube.distance_to_center/2.) \
-                           * direction_matrix[i]
-            self.childnodes.append(OctreeNode(self._limiting_cube.distance_to_center/2., child_center))
+            child_center = (self._limiting_cube.center +
+                            ((self._limiting_cube.distance_to_center / 2.) * direction_matrix[i]))
+            self.childnodes.append(OctreeNode(self._limiting_cube.distance_to_center/2., child_center, self))
 
     def insert_particle(self, particle):
         if self.mass == 0:
@@ -92,6 +100,7 @@ class OctreeNode(object):
             self.mass = particle.mass
             self.center_of_mass = particle.position
             self.particle = particle
+            self.n_particles = 1
         elif self.is_leaf:
             # External node
             # If node x is an external node, say containing a body named c,
@@ -121,10 +130,14 @@ class OctreeNode(object):
                 if found_existing and found_new:
                     break
 
+            if not found_existing and not found_new:
+                raise Exception("Exception during external node insertion")
+
             # Finally, update the center-of-mass and total mass of x
             self.center_of_mass = physics.center_of_mass(self.mass, self.center_of_mass, particle.mass,
                                                          particle.position)
             self.mass += particle.mass
+            self.n_particles += 1
 
         else:
             # Internal node
@@ -163,10 +176,10 @@ class Cube(object):
                                     [1., 1., -1.], [1., -1., -1.]])
 
         for i in range(0, 8):
-            vertex = [self.distance_to_center + (self.center * direction_matrix[i])]
-            self.vertices.append(vertex * direction_matrix[i])
+            vertex = [ (self.distance_to_center * direction_matrix[i]) + self.center]
+            self.vertices.append(vertex) # * direction_matrix[i])
 
-        self.vertices = np.array(self.vertices)
+        self.vertices = np.array(self.vertices).reshape(8,3)
 
     def contains_point(self, point):
         """
@@ -175,7 +188,7 @@ class Cube(object):
         :return: True or False depending if the point is contained within the volumen of the cube
         """
 
-        coord_min = self.vertices.min()
-        coord_max = self.vertices.max()
+        coord_min = np.array([min(self.vertices[:, 0]), min(self.vertices[:, 1]), min(self.vertices[: ,2])])
+        coord_max = np.array([max(self.vertices[:, 0]), max(self.vertices[:, 1]), max(self.vertices[:, 2])])
 
         return all(point >= coord_min) and all(point <= coord_max)
