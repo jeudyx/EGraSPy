@@ -4,9 +4,8 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
 import numpy as np
 import unittest
-import physics
-from structures import OctreeNode, Cube, Particle
-from astro_constants import SUN_MASS
+from structures import OctreeNode, Particle
+
 
 class TestTreeConstruction(unittest.TestCase):
 
@@ -19,6 +18,7 @@ class TestTreeConstruction(unittest.TestCase):
         max_distance = max(raw_data[:,6])
         self.node = OctreeNode(distance_to_center=max_distance)
         for line in raw_data:
+            # noinspection PyArgumentList
             self.particles.append(Particle(line[0], line[1], line[2], line[3], line[4], line[5], line[8], line[7]))
             self.total_cloud_mass += line[7]
 

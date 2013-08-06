@@ -8,6 +8,7 @@ import physics
 from structures import OctreeNode, Cube, Particle
 from astro_constants import SUN_MASS
 
+
 class TestPhysics(unittest.TestCase):
 
     def setUp(self):
@@ -23,16 +24,31 @@ class TestPhysics(unittest.TestCase):
     def test_known_center_of_mass(self):
         self.assertAlmostEqual(np.linalg.norm(physics.center_of_mass(1000., -5, 100, 5)), 4.09090909)
 
+    def test_fails_total_energy_diff_len_list(self):
+        with self.assertRaises(ValueError):
+            physics.total_energy(np.array([0, 0]), [np.array([0, 0, 0])], [np.array([0, 0, 0])])
+
+    def test_kin_energy_same_total_energy_same_particle(self):
+        masses = np.array([10.])
+        positions = [np.array([1., 1., 1.])]
+        velocities = [np.array([10., 10., 10.])]
+        self.assertEqual(physics.kinetic_energy(masses[0], velocities[0]),
+                         physics.total_energy(masses, velocities, positions))
+
+    def test_zero_kin_energy(self):
+        self.assertEqual(physics.kinetic_energy(10, np.array([0., 0., 0.])), 0.)
+
+
 class TestGeometry(unittest.TestCase):
 
     def setUp(self):
         RADIUS = 10.
-        self.cube = Cube(RADIUS, np.array([0.,0.,0.]))
-        self.point1 = np.array([0.,0.,0.])
+        self.cube = Cube(RADIUS, np.array([0., 0., 0.]))
+        self.point1 = np.array([0., 0., 0.])
         self.point2 = np.array([RADIUS, 0, 0])
         self.point3 = np.array([0, 0, RADIUS])
         self.point4 = np.array([RADIUS, RADIUS, RADIUS])
-        self.point5 = np.array([RADIUS, RADIUS*2, RADIUS])
+        self.point5 = np.array([RADIUS, RADIUS * 2, RADIUS])
 
     def test_point_contained(self):
         self.assertTrue(self.cube.contains_point(self.point1))
@@ -44,7 +60,7 @@ class TestGeometry(unittest.TestCase):
         self.assertFalse(self.cube.contains_point(self.point5))
 
     def test_knownpoint_not_contained(self):
-        new_cube = Cube(12.5, np.array([-37.5 , 37.5 , 37.5]))
+        new_cube = Cube(12.5, np.array([-37.5, 37.5, 37.5]))
         self.assertFalse(new_cube.contains_point(self.point1))
 
 
@@ -83,7 +99,6 @@ class TestOctree(unittest.TestCase):
     def test_children_contained(self):
         node = OctreeNode(distance_to_center=100)
         node.create_empty_child_nodes()
-        node._limiting_cube.vertices
         for child_node in node.childnodes:
             for vertex in child_node._limiting_cube.vertices:
                 self.assertTrue(node._limiting_cube.contains_point(vertex))

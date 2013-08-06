@@ -1,10 +1,11 @@
-# -*- coding: UTF-8 -*-
+__author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
-__author__ = 'jeudy'
+# -*- coding: UTF-8 -*-
 
 import scipy as sp
 import scipy.constants
 import numpy as np
+
 
 def gravitational_acceleration(ri, rj, mj):
     """Newton equation of motion for 2 particles i and j.
@@ -43,21 +44,31 @@ def potential_energy(mi, mj, ri, rj):
     diff = rj - ri
     return (-sp.constants.G * mi * mj) / np.linalg.norm(diff)
 
-# needs rectoring
 
-# def total_energy(cuerpos):
-#     ekin = 0
-#     epot = 0
-#     for cuerpo in cuerpos:
-#         ekin += energia_cinetica(cuerpo.masa, cuerpo.velocidad)
-#         for c in cuerpos:
-#             if cuerpo != c:
-#                 epot += energia_potencial(cuerpo.masa, c.masa, cuerpo.posicion, c.posicion)
-#
-#     #Se divide entre 2 porque el aporte de cada particula se calculó 2 veces
-#     epot /= 2
-#
-#     return ekin + epot
+def total_energy(masses, velocities, positions):
+    """ Calculates the total energy of a list of bodies
+
+    :param masses: numpy array of masses
+    :param velocities: list of velocity vectors (numpy arrays)
+    :param positions: list of position vectors (numpy arrays)
+    :return: total energy :raise: Value error if lists are of different sizes
+    """
+    ekin = 0
+    epot = 0
+    if not (len(masses) == len(velocities) == len(positions)):
+        raise ValueError("Error calculating total energy: masses and velocities must numpy arrays of the same size")
+
+    for mi, vi, ri in zip(masses, velocities, positions):
+        ekin += kinetic_energy(mi, vi)
+        for mj, vj, rj in zip(masses, velocities, positions):
+            # Only consider if it is a different body
+            if np.linalg.norm(ri - rj) != 0:
+               epot += potential_energy(mi, mj, ri, rj)
+     # Divide potential by 2 since every body was accounted twice
+    epot /= 2
+
+    return ekin + epot
+
 
 def center_of_mass(mass1, position1, mass2, position2):
     """
