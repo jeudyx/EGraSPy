@@ -1,4 +1,4 @@
-__author__ = 'jeudy'
+__author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
 # -*- coding: UTF-8 -*-
 
@@ -118,6 +118,8 @@ class TestOctree(unittest.TestCase):
         new_node.insert_particle(p1)
         new_node.insert_particle(p2)
         new_node.insert_particle(p3)
+        self.assertEqual(new_node.n_particles, 3)
+        self.assertEqual(new_node.num_populated_leaves, 3)
         self.assertEqual(new_node.mass, p1.mass + p2.mass + p3.mass)
         self.assertEqual(np.linalg.norm(new_node.center_of_mass), 0.)
 

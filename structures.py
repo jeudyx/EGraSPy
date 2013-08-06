@@ -79,6 +79,30 @@ class OctreeNode(object):
     def is_leaf(self):
         return len(self.childnodes) == 0 # and self.particle is not None
 
+    @property
+    def num_leaves(self):
+        if self.is_leaf:
+            return 1
+        else:
+            num = 0
+            for child_node in self.childnodes:
+                num += child_node.num_leaves
+            return num
+
+    @property
+    def num_populated_leaves(self):
+        if self.is_leaf:
+            if self.particle:
+                return 1
+            else:
+                return 0
+        else:
+            num = 0
+            for child_node in self.childnodes:
+                num += child_node.num_populated_leaves
+            return num
+
+
     def __str__(self):
         return "Level: %s, n_particles: %s. Total mass: %s, COM: %s" % (self._level, self.n_particles, self.normalized_mass, self.center_of_mass)
 
@@ -121,11 +145,11 @@ class OctreeNode(object):
 
             for child_node in self.childnodes:
                 # Try to insert new particle
-                if child_node.contains_particle(particle) and not found_new:
+                if not found_new and child_node.contains_particle(particle):
                     child_node.insert_particle(particle)
                     found_new = True
 
-                if child_node.contains_particle(self.particle) and not found_existing:
+                if not found_existing and child_node.contains_particle(self.particle):
                     child_node.insert_particle(self.particle)
                     self.particle = None # Should I remove this?
                     found_existing = True
@@ -148,6 +172,7 @@ class OctreeNode(object):
             self.center_of_mass = physics.center_of_mass(self.mass, self.center_of_mass, particle.mass,
                                                          particle.position)
             self.mass += particle.mass
+            self.n_particles += 1
             # Recursively insert the body b in the appropriate quadrant.
             for child_node in self.childnodes:
                 if child_node.contains_particle(particle):
