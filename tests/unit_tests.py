@@ -7,7 +7,7 @@ import unittest
 import physics
 from structures import OctreeNode, Cube, Particle
 from astro_constants import SUN_MASS
-
+from generate_cloud import generate_mass_distribution, adjust_mass
 
 class TestPhysics(unittest.TestCase):
 
@@ -153,3 +153,43 @@ class TestOctree(unittest.TestCase):
         self.assertEqual(new_node.childnodes[0].childnodes[0].childnodes[0]._level, 3)
         self.assertEqual(new_node.childnodes[0].childnodes[0].childnodes[0].childnodes[0]._level, 4)
         self.assertEqual(new_node.childnodes[0].childnodes[0].childnodes[0].childnodes[0].childnodes[0]._level, 5)
+
+
+class TestParticleDistribution(unittest.TestCase):
+
+    def setUp(self):
+        self.NUM_PARTICLES = 1000
+        self.TOTAL_MASS = 1.
+        self.VARIATION = 0.25
+
+    def test_zero_variation(self):
+        masses = generate_mass_distribution(self.TOTAL_MASS, self.NUM_PARTICLES)
+        self.assertEqual(len(masses[masses == self.TOTAL_MASS/self.NUM_PARTICLES]), self.NUM_PARTICLES)
+
+    def test_variation(self):
+        masses = generate_mass_distribution(self.TOTAL_MASS, self.NUM_PARTICLES, max_variation=self.VARIATION)
+        self.assertAlmostEqual(sum(masses), self.TOTAL_MASS)
+
+    def test_total_mass(self):
+        masses = generate_mass_distribution(self.TOTAL_MASS, self.NUM_PARTICLES)
+        self.assertAlmostEqual(sum(masses), self.TOTAL_MASS)
+
+    def test_adjust_mass_possitive_difference(self):
+        masses_list = np.repeat((self.TOTAL_MASS / self.NUM_PARTICLES) / 2., self.NUM_PARTICLES)
+        masses_list = adjust_mass(masses_list, self.TOTAL_MASS)
+        self.assertAlmostEqual(sum(masses_list), self.TOTAL_MASS)
+
+    def test_adjust_mass_negative_difference(self):
+        masses_list = np.repeat((self.TOTAL_MASS / self.NUM_PARTICLES) * 2., self.NUM_PARTICLES)
+        masses_list = adjust_mass(masses_list, self.TOTAL_MASS)
+        self.assertAlmostEqual(sum(masses_list), self.TOTAL_MASS)
+
+    def test_adjust_mass_negative_difference_variations(self):
+        masses_list = [0.75, 0.5, 0.25, 0.1, 0.1, 0.1]
+        masses_list = adjust_mass(masses_list, self.TOTAL_MASS)
+        self.assertAlmostEqual(sum(masses_list), self.TOTAL_MASS)
+
+    def test_adjust_mass_positive_difference_variations(self):
+        masses_list = [0.13, 0.25, 0.25, 0.01, 0.05, 0.1]
+        masses_list = adjust_mass(masses_list, self.TOTAL_MASS)
+        self.assertAlmostEqual(sum(masses_list), self.TOTAL_MASS)

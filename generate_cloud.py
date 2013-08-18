@@ -8,7 +8,61 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
 import sys
 import argparse
+import numpy as np
 
+def read_params(path):
+    return
+
+
+def generate_mass_distribution(total_mass, n_particles, max_variation=0):
+    """ Generate mass distribution
+
+    :param total_mass: total mass to distribute
+    :param n_particles: number of particles
+    :param max_variation: maximum variation (from 0 to 1) in particle mass
+    :return: numpy array with mass distribution
+    """
+    particle_mass = total_mass / n_particles
+    masses_list = np.repeat(particle_mass, n_particles)
+
+    if max_variation:
+        # Determine if the variation will sum or substract from the particle mass
+        signs = np.array([x if x != 0 else 1 for x in np.random.randint(-1,high=2,size=n_particles)])
+        # Variation percentage
+        variations = np.array([x if x <= max_variation else 0 for x in np.random.random(n_particles)]) * signs
+        mass_variations = masses_list * variations
+        # Masses with the variation
+        masses_list = masses_list + mass_variations
+        # Need to ajust if the total mass is not the desired one
+        masses_list = adjust_mass(masses_list, total_mass)
+
+    return masses_list
+
+
+def adjust_mass(masses_list, total_mass):
+    """ If the sum of masses_list is different than total_mass, need to adjust
+
+    :param masses_list: The list of masses to adjust
+    :param total_mass:  The correct value of total mass for the distribution
+    :return: Adjusted list of masses
+    """
+    difference = total_mass - sum(masses_list)
+    particle_difference = np.abs(difference) / len(masses_list)
+
+    if difference == 0:
+        return masses_list
+    elif difference > 0:
+        # The list has less mass, need to add to each particle
+        masses_list = masses_list + np.repeat(particle_difference, len(masses_list))
+    else:
+        # The list has more mass, need to substract, but careful if the particle
+        # difference is greater than the particle mass
+        masses_list = np.array([x - particle_difference if x - particle_difference > 0 else x for x in masses_list])
+        # If still different mass, need to call recursively
+        if total_mass != sum(masses_list):
+            return adjust_mass(masses_list, total_mass)
+
+    return masses_list
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Generates a distribution of particles '
