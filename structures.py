@@ -182,7 +182,39 @@ class OctreeNode(object):
             raise Exception("Particle was not contained by any childnode. Particle position: %s" % particle.position)
 
 
-class Cube(object):
+class Volume(object):
+    """Abstract representation of any volume"""
+
+    def __init__(self):
+        # TODO
+        return
+
+    def contains_point(self, point):
+        return
+
+
+class Sphere(Volume):
+    """Represents a sphere object
+    """
+    def __init__(self, radius, center):
+        """
+
+        :param radius:
+        :param center: 3D vector (numpy array)
+        """
+        self.radius = radius
+        self.center = center
+
+    def contains_point(self, point):
+        """
+
+        :param point: point to test to see if it is contained within the sphere volume
+        :return: true or false
+        """
+        # Should I substract the point from the sphere center?
+        return self.radius >= (np.linalg.norm(point))
+
+class Cube(Volume):
     """Representation of cube"""
 
     def __init__(self, distance_to_center, center):

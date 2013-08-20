@@ -9,9 +9,49 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import sys
 import argparse
 import numpy as np
+from structures import Sphere
 
 def read_params(path):
+    """
+
+    :param path:
+    :return:
+    """
     return
+
+
+def generate_random_positions_from_a_to_b(a, b, n_particles):
+    """ Generates 3D positions from a to b using: (b - a) * random_sample() + a
+    Assumes that a is less than b
+
+    :param a: lower limit of range
+    :param b: upper limit of range
+    :param n_particles: number of particles
+    :return: numpy array of 3D vector between a and b
+    """
+    return (b - a) * np.random.random_sample((n_particles,3)) + a
+
+def generate_sphere_position_distribution(radius, center, n_particles):
+
+    containing_sphere = Sphere(radius, center)
+    preliminary_positions = generate_random_positions_from_a_to_b(-radius, radius, n_particles)
+
+    preliminary_positions = [tuple(p) for p in preliminary_positions if containing_sphere.contains_point(p)]
+    current_len = len(preliminary_positions)
+
+    while current_len < n_particles:
+        extension_list = [tuple(p) for p in generate_random_positions_from_a_to_b(-radius, radius, n_particles - current_len)
+                          if containing_sphere.contains_point(p)]
+        preliminary_positions.extend(extension_list)
+        preliminary_positions = list(set(preliminary_positions))    # Ensure uniqueness
+        current_len = len(preliminary_positions)
+
+    return np.array(preliminary_positions)
+
+
+def generate_positions(dist_type):
+    if dist_type == "sphere":
+        return generate_sphere_position_distribution()
 
 
 def generate_mass_distribution(total_mass, n_particles, max_variation=0):
@@ -63,6 +103,7 @@ def adjust_mass(masses_list, total_mass):
             return adjust_mass(masses_list, total_mass)
 
     return masses_list
+
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Generates a distribution of particles '
