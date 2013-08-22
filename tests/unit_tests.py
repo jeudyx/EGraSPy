@@ -7,7 +7,7 @@ import unittest
 import physics
 from structures import OctreeNode, Cube, Particle, Sphere
 from astro_constants import SUN_MASS
-from generate_cloud import generate_mass_distribution, adjust_mass, generate_random_positions_from_a_to_b, generate_sphere_position_distribution
+from generate_cloud import generate_mass_distribution, _adjust_mass, _generate_random_positions_from_a_to_b, _generate_sphere_position_distribution
 
 
 
@@ -188,40 +188,40 @@ class TestParticleDistribution(unittest.TestCase):
 
     def test_adjust_mass_possitive_difference(self):
         masses_list = np.repeat((self.TOTAL_MASS / self.NUM_PARTICLES) / 2., self.NUM_PARTICLES)
-        masses_list = adjust_mass(masses_list, self.TOTAL_MASS)
+        masses_list = _adjust_mass(masses_list, self.TOTAL_MASS)
         self.assertAlmostEqual(sum(masses_list), self.TOTAL_MASS)
 
     def test_adjust_mass_negative_difference(self):
         masses_list = np.repeat((self.TOTAL_MASS / self.NUM_PARTICLES) * 2., self.NUM_PARTICLES)
-        masses_list = adjust_mass(masses_list, self.TOTAL_MASS)
+        masses_list = _adjust_mass(masses_list, self.TOTAL_MASS)
         self.assertAlmostEqual(sum(masses_list), self.TOTAL_MASS)
 
     def test_adjust_mass_negative_difference_variations(self):
         masses_list = [0.75, 0.5, 0.25, 0.1, 0.1, 0.1]
-        masses_list = adjust_mass(masses_list, self.TOTAL_MASS)
+        masses_list = _adjust_mass(masses_list, self.TOTAL_MASS)
         self.assertAlmostEqual(sum(masses_list), self.TOTAL_MASS)
 
     def test_adjust_mass_positive_difference_variations(self):
         masses_list = [0.13, 0.25, 0.25, 0.01, 0.05, 0.1]
-        masses_list = adjust_mass(masses_list, self.TOTAL_MASS)
+        masses_list = _adjust_mass(masses_list, self.TOTAL_MASS)
         self.assertAlmostEqual(sum(masses_list), self.TOTAL_MASS)
 
     def test_generate_random_positions_from_a_to_b(self):
         a = -5
         b = 10
-        positions = generate_random_positions_from_a_to_b(a, b, 100)
+        positions = _generate_random_positions_from_a_to_b(a, b, 100)
         for p in positions:
             self.assertTrue(a <= p[0] <= b)
             self.assertTrue(a <= p[0] <= b)
             self.assertTrue(a <= p[0] <= b)
 
     def test_generate_sphere_position_distribution(self):
-        points = generate_sphere_position_distribution(10, [0., 0., 0.], 100)
+        points = _generate_sphere_position_distribution(10, [0., 0., 0.], 100)
         sphere = Sphere(10, [0., 0., 0.])
         self.assertEqual(len(points), 100)
         for p in points:
             self.assertTrue(sphere.contains_point(p))
 
     def test_generate_sphere_position_distribution_unique_points(self):
-        points = generate_sphere_position_distribution(10, [0., 0., 0.], 100)
+        points = _generate_sphere_position_distribution(10, [0., 0., 0.], 100)
         self.assertEqual(len(points), len(set([tuple(p) for p in points])))

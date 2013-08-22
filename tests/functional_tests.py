@@ -5,7 +5,7 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import numpy as np
 import unittest
 from structures import OctreeNode, Particle
-from generate_cloud import generate_sphere_position_distribution
+from generate_cloud import _generate_sphere_position_distribution
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -14,7 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 class TestParticleDistributionVisualization(unittest.TestCase):
 
     def setUp(self):
-        self.points = generate_sphere_position_distribution(10, [0., 0., 0.], 10000)
+        self.points = _generate_sphere_position_distribution(10, [0., 0., 0.], 10000)
 
     def test_sphere(self):
         x = self.points[:,0]

@@ -80,3 +80,10 @@ def center_of_mass(mass1, position1, mass2, position2):
     :return:
     """
     return ((mass1 * position1) + (mass2 * position2)) / (mass1 + mass2)
+
+
+def volume(mass, density):
+    return mass / density
+
+def calculate_radius(mass, density):
+    return ((3.0 * (mass)) / (4.0 * np.pi * density)) ** (1.0/3.0)
