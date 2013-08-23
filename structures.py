@@ -11,12 +11,6 @@ import physics
 
 class Particle(object):
     """Representation of a particle"""
-    def __init__(self):
-        """Basic constructor for empty objects """
-        self.position = np.array([0., 0., 0.])
-        self.velocity = np.array([0., 0., 0.])
-        self.mass = 0.
-        self.density = 0.
 
     def __init__(self, x, y, z, vx, vy, vz, rho, m):
         """Class constructor with values

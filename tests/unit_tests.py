@@ -1,3 +1,5 @@
+from defer import return_value
+
 __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
 # -*- coding: UTF-8 -*-
@@ -5,11 +7,11 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import numpy as np
 import unittest
 import physics
+from mock import patch, MagicMock
 from structures import OctreeNode, Cube, Particle, Sphere
 from astro_constants import SUN_MASS
-from generate_cloud import generate_mass_distribution, _adjust_mass, _generate_random_positions_from_a_to_b, _generate_sphere_position_distribution
-
-
+from generate_cloud import generate_mass_distribution, _adjust_mass, _generate_random_positions_from_a_to_b, \
+    _generate_sphere_position_distribution, ParameterReader, generate_cloud
 
 class TestPhysics(unittest.TestCase):
 
@@ -225,3 +227,54 @@ class TestParticleDistribution(unittest.TestCase):
     def test_generate_sphere_position_distribution_unique_points(self):
         points = _generate_sphere_position_distribution(10, [0., 0., 0.], 100)
         self.assertEqual(len(points), len(set([tuple(p) for p in points])))
+
+
+class TestCloudGeneration(unittest.TestCase):
+
+    def test_ParameterReader_file(self):
+        mock_json = {"mass": 2.0, "n_particles": 5000, "density": 1E-18, "temperature": 20,
+                     "path": "./data/test_param_cloud.csv", "rotation":  0.,
+                     "variation":  0.75, "center":  [5., 5., 5.]}
+
+        with patch("__builtin__.open", create=True) as mock_open:
+            mock_open.return_value = MagicMock(spec=file)
+            with patch("json.load", return_value=mock_json):
+                reader = ParameterReader.from_configfile("dummy_path")
+                self.assertEqual(reader.mass, mock_json["mass"])
+                self.assertEqual(reader.n_particles, mock_json["n_particles"])
+                self.assertEqual(reader.density, mock_json["density"])
+                self.assertEqual(reader.temperature, mock_json["temperature"])
+                self.assertEqual(reader.cloud_path, mock_json["path"])
+                self.assertEqual(reader.rotation, mock_json["rotation"])
+                self.assertEqual(reader.variation, mock_json["variation"])
+                self.assertEqual(reader.center, mock_json["center"])
+
+    def test_generate_cloud_individual_params(self):
+        args = MagicMock()
+        args.mass = 1.
+        args.nparticles = 1000
+        args.rho = 1E20
+        args.temperature = 10.
+        args.path = ''
+        args.rotation = 0.
+        args.variation = 0.
+        args.config = None
+        particles = generate_cloud(args, write_file=False)
+        self.assertEqual(len(particles), 1000)
+        self.assertAlmostEqual(particles[0].mass, 1. / 1000)
+
+    def test_generate_cloud_config_file(self):
+        args = MagicMock()
+        args.config = 'dummy_path'
+        mock_json = {"mass": 1.0, "n_particles": 1000, "density": 1E-18, "temperature": 20,
+                     "path": "./data/test_param_cloud.csv", "rotation":  0.,
+                     "variation":  0., "center":  [5., 5., 5.]}
+
+        with patch("__builtin__.open", create=True) as mock_open:
+            mock_open.return_value = MagicMock(spec=file)
+            with patch("json.load", return_value=mock_json):
+                particles = generate_cloud(args, write_file=False)
+                self.assertEqual(len(particles), mock_json["n_particles"])
+                self.assertAlmostEqual(particles[0].mass, mock_json["mass"] / mock_json["n_particles"])
+
+unittest.main()

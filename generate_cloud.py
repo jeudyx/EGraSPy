@@ -12,21 +12,40 @@ import sys
 import argparse
 import numpy as np
 import csv
+import json
 from scipy.constants import parsec
-from structures import Sphere
+from structures import Sphere, Particle
 from physics import calculate_radius
 from astro_constants import SUN_MASS
 
 DEFAULT_CENTER = np.array([0., 0., 0.])
 
-def read_params(path):
-    """
 
-    :param path:
-    :return:
-    """
-    return
+class ParameterReader(object):
 
+    def __init__(self, mass, n_particles, density, temperature, path, rotation, variation, center):
+        self.mass = mass
+        self.n_particles = n_particles
+        self.density = density
+        self.temperature = temperature
+        self.cloud_path = path
+        self.rotation = rotation
+        self.variation = variation
+        self.center = center
+
+    @classmethod
+    def from_configfile(cls, config_file_path):
+        json_data=open(config_file_path)
+        data = json.load(json_data)
+        mass = data["mass"]
+        n_particles = data["n_particles"]
+        density = data["density"]
+        temperature = data["temperature"]
+        cloud_path = data["path"]
+        rotation = data["rotation"]
+        variation = data["variation"]
+        center = data["center"]
+        return cls(mass, n_particles, density, temperature, cloud_path, rotation, variation, center)
 
 def _generate_random_positions_from_a_to_b(a, b, n_particles):
     """ Generates 3D positions from a to b using: (b - a) * random_sample() + a
@@ -138,7 +157,7 @@ def _write_values(masses, positions, velocities, density, temperature, path):
             datawriter.writerow(row)
 
 
-def main(argv=None):
+def main():
     parser = argparse.ArgumentParser(description='Generates a distribution of particles '
                                                  'representing an interstellar gas cloud')
     parser.add_argument("-m", "--mass", help="Total mass of cloud (in solar masses)", default=1.)
@@ -158,26 +177,39 @@ def main(argv=None):
     parser.add_argument("-v", "--verbose", help="Displays debuging messages", default=False)
     args = parser.parse_args()
 
-    if args.config:
-        read_params(args.config)
-    else:
-        mass = args.mass
-        n_particles = args.nparticles
-        density = args.rho
-        temperature = args.temperature
-        path = args.path
-        rotation = args.rotation
-        variation = args.variation
-        center = DEFAULT_CENTER
+    generate_cloud(args)
 
-        # Assume for now spherical distribution centered on 0,0,0
-        # Since mass comes in solar masses, and density in gr/cm³, need to convert to kg and kg/m³
-        # result is expresses in parsecs
-        radius = calculate_radius(mass * SUN_MASS, density*1000.0) / parsec
-        positions = generate_positions(radius, center, n_particles)
-        masses = generate_mass_distribution(mass, n_particles, variation)
-        velocities = generate_velocity_distribution(n_particles, rotation)
-        _write_values(masses, positions, velocities, density, temperature, path)
+
+def generate_cloud(args, write_file=True):
+
+    if args.config:
+        reader = ParameterReader.from_configfile(args.config)
+    else:
+        # noinspection PyArgumentList
+        reader = ParameterReader(args.mass, args.nparticles, args.rho, args.temperature,
+                                 args.path, args.rotation, args.variation, DEFAULT_CENTER)
+
+    # Assume for now spherical distribution centered on 0,0,0
+    # Since mass comes in solar masses, and density in gr/cm³, need to convert to kg and kg/m³
+    # result is expresses in parsecs
+    radius = calculate_radius(reader.mass * SUN_MASS, reader.density*1000.0) / parsec
+    positions = generate_positions(radius, reader.center, reader.n_particles)
+    masses = generate_mass_distribution(reader.mass, reader.n_particles, reader.variation)
+    velocities = generate_velocity_distribution(reader.n_particles, reader.rotation)
+    if write_file:
+        _write_values(masses, positions, velocities, reader.density, reader.temperature, reader.cloud_path)
+
+    # For testing purposes only?
+    particles_list = []
+
+    for i, mass in enumerate(masses):
+        p = Particle(positions[0], positions[1], positions[2],
+                     velocities[0], velocities[1], velocities[2],
+                     reader.density, mass)
+
+        particles_list.append(p)
+
+    return particles_list
 
 if __name__ == "__main__":
     sys.exit(main())
