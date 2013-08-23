@@ -1,0 +1,10 @@
+{
+"mass" : 2.0,
+"n_particles" : 5000,
+"density": 1E-18,
+"temperature": 20,
+"cloud_path": "./data/test_param_cloud.csv",
+"rotation":  0.,
+"variation":  0.75,
+"center":  [5., 5., 5.]
+}
