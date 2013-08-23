@@ -5,8 +5,8 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import numpy as np
 import unittest
 from structures import OctreeNode, Particle
-from generate_cloud import _generate_sphere_position_distribution
-
+from generate_cloud import _generate_sphere_position_distribution, generate_cloud
+from mock import MagicMock
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -51,3 +51,27 @@ class TestTreeConstruction(unittest.TestCase):
         self.assertEqual(self.total_cloud_mass, self.node.mass)
         self.assertEqual(self.node.n_particles, len(self.particles))
         self.assertEqual(self.node.num_populated_leaves, len(self.particles))
+
+
+class TestParticleGenerationVisualization(unittest.TestCase):
+
+    def test_generate_cloud(self):
+
+        args = MagicMock()
+        args.config = '../params/test_cloud.json'
+        particles = generate_cloud(args, write_file=False)
+
+
+        x = [p.position[0] for p in particles]
+        y = [p.position[1] for p in particles]
+        z = [p.position[2] for p in particles]
+
+        fig = plt.figure("TestParticleGenerationVisualization.test_generate_cloud")
+
+        ax = plt.axes(projection='3d')
+
+        ax.plot(x, y, z, '.')
+
+        plt.show()
+
+unittest.main()

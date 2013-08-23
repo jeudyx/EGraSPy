@@ -203,8 +203,8 @@ def generate_cloud(args, write_file=True):
     particles_list = []
 
     for i, mass in enumerate(masses):
-        p = Particle(positions[0], positions[1], positions[2],
-                     velocities[0], velocities[1], velocities[2],
+        p = Particle(positions[i][0], positions[i][1], positions[i][2],
+                     velocities[i][0], velocities[i][1], velocities[i][2],
                      reader.density, mass)
 
         particles_list.append(p)
