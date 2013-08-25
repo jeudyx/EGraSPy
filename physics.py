@@ -42,6 +42,8 @@ def potential_energy(mi, mj, ri, rj):
     :return: gravitational potential energy in Joules
     """
     diff = rj - ri
+    if np.linalg.norm(diff) == 0.:
+        raise ZeroDivisionError
     return (-sp.constants.G * mi * mj) / np.linalg.norm(diff)
 
 
@@ -63,7 +65,7 @@ def total_energy(masses, velocities, positions):
         for mj, vj, rj in zip(masses, velocities, positions):
             # Only consider if it is a different body
             if np.linalg.norm(ri - rj) != 0:
-               epot += potential_energy(mi, mj, ri, rj)
+                epot += potential_energy(mi, mj, ri, rj)
      # Divide potential by 2 since every body was accounted twice
     epot /= 2
 
@@ -82,8 +84,9 @@ def center_of_mass(mass1, position1, mass2, position2):
     return ((mass1 * position1) + (mass2 * position2)) / (mass1 + mass2)
 
 
-def volume(mass, density):
+def calculate_volume(mass, density):
     return mass / density
 
+
 def calculate_radius(mass, density):
-    return ((3.0 * (mass)) / (4.0 * np.pi * density)) ** (1.0/3.0)
+    return ((3.0 * mass) / (4.0 * np.pi * density)) ** (1.0/3.0)

@@ -195,7 +195,7 @@ class OctreeNode(object):
 
 
 class Volume(object):
-    """Abstract representation of any volume"""
+    """Abstract representation of any calculate_volume"""
 
     def __init__(self):
         # TODO
@@ -220,7 +220,7 @@ class Sphere(Volume):
     def contains_point(self, point):
         """
 
-        :param point: point to test to see if it is contained within the sphere volume
+        :param point: point to test to see if it is contained within the sphere calculate_volume
         :return: true or false
         """
         # Should I substract the point from the sphere center?

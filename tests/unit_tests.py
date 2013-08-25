@@ -101,6 +101,10 @@ class TestPhysics(unittest.TestCase):
         with self.assertRaises(ValueError):
             physics.total_energy(np.array([0, 0]), [np.array([0, 0, 0])], [np.array([0, 0, 0])])
 
+    def test_potential_energy_self(self):
+        with self.assertRaises(ZeroDivisionError):
+            physics.potential_energy(1., 1., np.array([0., 0., 0.]), np.array([0., 0., 0.]))
+
     def test_kin_energy_same_total_energy_same_particle(self):
         masses = np.array([10.])
         positions = [np.array([1., 1., 1.])]
@@ -110,6 +114,27 @@ class TestPhysics(unittest.TestCase):
 
     def test_zero_kin_energy(self):
         self.assertEqual(physics.kinetic_energy(10, np.array([0., 0., 0.])), 0.)
+
+    def test_calculate_radius(self):
+        radius = 3.
+        mass = 10.
+        volume = (4./3.) * np.pi * radius ** 3
+        density = mass / volume
+        self.assertEqual(physics.calculate_radius(mass, density), radius)
+
+    def test_calculate_radius(self):
+        radius = 3.
+        mass = 10.
+        volume = (4./3.) * np.pi * radius ** 3
+        density = mass / volume
+        self.assertEqual(physics.calculate_radius(mass, density), radius)
+
+    def test_calculate_volume(self):
+        radius = 3.
+        mass = 10.
+        volume = (4./3.) * np.pi * radius ** 3
+        density = mass / volume
+        self.assertEqual(physics.calculate_volume(mass, density), volume)
 
 
 class TestGeometry(unittest.TestCase):
