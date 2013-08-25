@@ -10,6 +10,64 @@ from structures import OctreeNode, Cube, Particle, Sphere
 from astro_constants import SUN_MASS
 from generate_cloud import generate_mass_distribution, _adjust_mass, _generate_random_positions_from_a_to_b, \
     _generate_sphere_position_distribution, ParameterReader, generate_cloud
+from barneshut import barnes_hut_gravitational_acceleration
+
+
+class TestBarnesHut(unittest.TestCase):
+
+    def test_single_particle_zero_grativity(self):
+        tree = OctreeNode(distance_to_center=100)
+        p = Particle(10., 10., 10., 0., 0., 0., 0., SUN_MASS)
+        tree.insert_particle(p)
+        self.assertEqual(np.linalg.norm(barnes_hut_gravitational_acceleration(p, tree)), 0.0)
+
+    def test_two_equal_particles_grativity(self):
+        tree = OctreeNode(distance_to_center=100)
+        p1 = Particle(10., 10., 10., 0., 0., 0., 0., SUN_MASS)
+        p2 = Particle(20., 20., 20., 0., 0., 0., 0., SUN_MASS)
+        tree.insert_particle(p1)
+        tree.insert_particle(p2)
+        self.assertEqual(np.linalg.norm(barnes_hut_gravitational_acceleration(p1, tree)),
+                         np.linalg.norm(barnes_hut_gravitational_acceleration(p2, tree)))
+
+    def test_compare_brute_force(self):
+        tree = OctreeNode(distance_to_center=100)
+        p1 = Particle(10., 10., 10., 0., 0., 0., 0., SUN_MASS/3.)
+        p2 = Particle(20., 20., 20., 0., 0., 0., 0., SUN_MASS/2.)
+        tree.insert_particle(p1)
+        tree.insert_particle(p2)
+        brute1 = physics.gravitational_acceleration(p1.position, p2.position, p2.mass)
+        barnes_1 = barnes_hut_gravitational_acceleration(p1, tree)
+        brute2 = physics.gravitational_acceleration(p2.position, p1.position, p1.mass)
+        barnes_2 = barnes_hut_gravitational_acceleration(p2, tree)
+        self.assertTrue(all(barnes_1 == brute1))
+        self.assertTrue(all(barnes_2 == brute2))
+
+    def test_compare_brute_force_system(self):
+        tree = OctreeNode(distance_to_center=100)
+        p1 = Particle(10., 10., 10., 0., 0., 0., 0., SUN_MASS/4.)
+        p2 = Particle(10., 11., 10., 0., 0., 0., 0., SUN_MASS/3.)
+        p3 = Particle(10., 10., 11., 0., 0., 0., 0., SUN_MASS/2.)
+        p4 = Particle(40., 40., 40., 0., 0., 0., 0., SUN_MASS)
+        particles = [p1, p2, p3, p4]
+        tree.insert_particle(p1)
+        tree.insert_particle(p2)
+        tree.insert_particle(p3)
+        tree.insert_particle(p4)
+        for p in particles:
+            brute = np.array([0., 0., 0.])
+            for q in particles:
+                if p != q:
+                    brute += physics.gravitational_acceleration(p.position, q.position, q.mass)
+            # theta = 0 is equivalent to brute force
+            barnes_hut_zero_theta = barnes_hut_gravitational_acceleration(p, tree, theta=0.0)
+            barnes_hut_0_5_theta = barnes_hut_gravitational_acceleration(p, tree, theta=0.6)
+            self.assertAlmostEqual(np.log(np.linalg.norm(barnes_hut_zero_theta)),
+                                   np.log(np.linalg.norm(brute)))
+
+            self.assertAlmostEqual(np.log(np.linalg.norm(barnes_hut_0_5_theta)),
+                                   np.log(np.linalg.norm(brute)), places=3)
+
 
 class TestParticles(unittest.TestCase):
 
