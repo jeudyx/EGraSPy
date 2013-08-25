@@ -28,6 +28,12 @@ class Particle(object):
         self.mass = m
         self.density = rho
 
+    def __eq__(self, other):
+        return all(self.position == other.position)
+
+    def __ne__(self, other):
+        return not all(self.position == other.position)
+
     def __str__(self):
         return "position: %s, velocity: %s, mass: %s, density: %s" % \
                (self.position, self.velocity, self.normalized_mass, self.position)
@@ -62,6 +68,10 @@ class OctreeNode(object):
         self.n_particles = 0
 
     @property
+    def cube_side(self):
+        return self._limiting_cube.side
+
+    @property
     def normalized_mass(self):
         return self.mass / SUN_MASS
 
@@ -72,6 +82,14 @@ class OctreeNode(object):
     @property
     def is_leaf(self):
         return len(self.childnodes) == 0
+
+    @property
+    def is_external_node(self):
+        return self.particle is not None and len(self.childnodes) == 0
+
+    @property
+    def is_internal_node(self):
+        return self.particle is None and len(self.childnodes) == 8
 
     @property
     def num_leaves(self):
@@ -246,3 +264,7 @@ class Cube(Volume):
         coord_max = np.array([max(self.vertices[:, 0]), max(self.vertices[:, 1]), max(self.vertices[:, 2])])
 
         return all(point >= coord_min) and all(point <= coord_max)
+
+    @property
+    def side(self):
+        return np.linalg.norm(self.vertices[0] - self.vertices[1])

@@ -1,5 +1,3 @@
-from defer import return_value
-
 __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
 # -*- coding: UTF-8 -*-
@@ -12,6 +10,19 @@ from structures import OctreeNode, Cube, Particle, Sphere
 from astro_constants import SUN_MASS
 from generate_cloud import generate_mass_distribution, _adjust_mass, _generate_random_positions_from_a_to_b, \
     _generate_sphere_position_distribution, ParameterReader, generate_cloud
+
+class TestParticles(unittest.TestCase):
+
+    def test_particle_same(self):
+        p1 = Particle(0., 0., 0., 0., 0., 0., 0., SUN_MASS)
+        p2 = Particle(0., 0., 0., 0., 0., 0., 0., SUN_MASS)
+        self.assertTrue(p1 == p2)
+
+    def test_particle_different(self):
+        p1 = Particle(0.1, 0., 0., 0., 0., 0., 0., SUN_MASS)
+        p2 = Particle(0., 0., 0., 0., 0., 0., 0., SUN_MASS)
+        self.assertTrue(p1 != p2)
+
 
 class TestPhysics(unittest.TestCase):
 
@@ -101,6 +112,27 @@ class TestOctree(unittest.TestCase):
     def test_is_leaf(self):
         node = OctreeNode()
         self.assertTrue(node.is_leaf)
+        node.create_empty_child_nodes()
+        for n in node.childnodes:
+            self.assertTrue(n.is_leaf)
+
+    def test_is_internal(self):
+        node = OctreeNode()
+        node.create_empty_child_nodes()
+        self.assertFalse(node.is_leaf)
+        self.assertTrue(node.is_internal_node)
+
+    def test_is_interal_with_particles(self):
+        node = OctreeNode(distance_to_center=100)
+        for i in range(0, 10):
+            node.insert_particle(Particle(10. + i, 0., 0., 0., 0., 0., 0., 1))
+        self.assertTrue(node.is_internal_node)
+
+    def test_is_external(self):
+        node = OctreeNode(distance_to_center=1000)
+        p = Particle(200., 200., 200., 0., 0., 0., 0., SUN_MASS)
+        node.insert_particle(p)
+        self.assertTrue(node.is_external_node)
 
     def test_create_empty_child_nodes(self):
         self.node.create_empty_child_nodes()
