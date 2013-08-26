@@ -14,7 +14,7 @@ from physics import brute_force_gravitational_acceleration
 
 args = MagicMock()
 args.mass = 1.
-args.nparticles = 10000
+args.nparticles = 500
 args.rho = 1E20
 args.temperature = 10.
 args.path = ''
@@ -39,12 +39,20 @@ def profile_barnes_hut(particles, theta):
 
 def profile_all():
     particles = generate_cloud(args, write_file=False)
-    profile_brute_force(particles)
-    profile_barnes_hut(particles, 1.0)
-    profile_barnes_hut(particles, 0.5)
-    profile_barnes_hut(particles, 0.25)
     profile_barnes_hut(particles, 0.1)
+    print 'Done BH 0.1'
+    profile_barnes_hut(particles, 0.25)
+    print 'Done BH 0.25'
+    profile_barnes_hut(particles, 0.5)
+    print 'Done BH 0.5'
+    profile_barnes_hut(particles, 0.95)
+    print 'Done BH 0.95'
+    profile_brute_force(particles)
+    print 'Done brute force'
 
-profile = cProfile.Profile()
-profile.runcall(profile_all)
-profile.dump_stats('./profile_all.profile')
+
+# profile = cProfile.Profile()
+# profile.runcall(profile_all)
+# profile.dump_stats('./profile_all.profile')
+
+cProfile.run("profile_all()")
