@@ -12,6 +12,12 @@ import physics
 class Particle(object):
     """Representation of a particle"""
 
+    @classmethod
+    def from_nparray(cls, data):
+        # Asumes data array comes in the form:
+        #  X,Y,Z,VX,VY,VZ,D,Mass,RHO
+        return cls(data[0], data[1], data[2], data[3], data[4], data[5], data[-2], data[-3])
+
     def __init__(self, x, y, z, vx, vy, vz, rho, m):
         """Class constructor with values
         :param x: x component of position (in m from origin)
@@ -57,7 +63,7 @@ class Particle(object):
 class OctreeNode(object):
     """Representation of an octree node"""
 
-    def __init__(self, distance_to_center=0, center=np.array([0., 0., 0.]), parent=None):
+    def __init__(self, distance_to_center, center=np.array([0., 0., 0.]), parent=None):
         self.childnodes = []
         self.mass = 0.
         self.center_of_mass = np.array([0., 0., 0.])

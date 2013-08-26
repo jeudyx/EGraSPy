@@ -5,9 +5,11 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import numpy as np
 import unittest
 from structures import OctreeNode, Particle
-from generate_cloud import _generate_sphere_position_distribution, generate_cloud
-from mock import MagicMock
+from generate_cloud import _generate_sphere_position_distribution, generate_cloud, load_cloud_from_file
+from physics import gravitational_acceleration, brute_force_gravitational_acceleration
+from mock import MagicMock, patch
 import matplotlib.pyplot as plt
+from barneshut import barnes_hut_gravitational_acceleration
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -51,6 +53,39 @@ class TestTreeConstruction(unittest.TestCase):
         self.assertEqual(self.total_cloud_mass, self.node.mass)
         self.assertEqual(self.node.n_particles, len(self.particles))
         self.assertEqual(self.node.num_populated_leaves, len(self.particles))
+
+
+class TestGravitationalAcelerationCalculation(unittest.TestCase):
+
+    def setUp(self):
+        self.args = MagicMock()
+        self.args.mass = 1.
+        self.args.nparticles = 100
+        self.args.rho = 1E20
+        self.args.temperature = 10.
+        self.args.path = './data/functional_test_cloud.csv'
+        self.args.rotation = 0.
+        self.args.variation = 0.75
+        self.args.config = None
+        self.particles = generate_cloud(self.args)
+
+    def test_write_read_cloud(self):
+        read_particles = load_cloud_from_file(self.args.path)
+        self.assertEqual(len(self.particles), len(read_particles))
+        for i, p in enumerate(self.particles):
+            q = read_particles[i]
+            self.assertTrue(p == q)
+            self.assertEqual(p.mass, q.mass)
+
+    def test_barnes_hut_accuracy(self):
+        tree = OctreeNode(distance_to_center=1.)
+        for i, p in enumerate(self.particles):
+            tree.insert_particle(p)
+
+        for p in self.particles:
+            brute = brute_force_gravitational_acceleration(p, self.particles)
+            barnes_hut = barnes_hut_gravitational_acceleration(p, tree, theta=0.1)
+            self.assertAlmostEqual(np.log(np.linalg.norm(brute)), np.log(np.linalg.norm(barnes_hut)), places=3)
 
 
 class TestParticleGenerationVisualization(unittest.TestCase):

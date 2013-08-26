@@ -180,6 +180,14 @@ def main():
     generate_cloud(args)
 
 
+def load_cloud_from_file(path):
+    particle_list = []
+    raw_data = np.loadtxt(path, delimiter=',', skiprows=1)
+    for p in raw_data:
+        particle_list.append(Particle.from_nparray(p))
+    return particle_list
+
+
 def generate_cloud(args, write_file=True):
 
     if args.config:

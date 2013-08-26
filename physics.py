@@ -84,6 +84,15 @@ def center_of_mass(mass1, position1, mass2, position2):
     return ((mass1 * position1) + (mass2 * position2)) / (mass1 + mass2)
 
 
+def brute_force_gravitational_acceleration(p, system):
+    resp = np.array([0., 0., 0.])
+    for q in system:
+        if p != q:
+            resp += gravitational_acceleration(p.position, q.position, q.mass)
+
+    return resp
+
+
 def calculate_volume(mass, density):
     return mass / density
 
