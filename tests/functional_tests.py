@@ -5,7 +5,8 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import numpy as np
 import unittest
 from structures import OctreeNode, Particle
-from generate_cloud import _generate_sphere_position_distribution, generate_cloud, load_cloud_from_file
+from generate_cloud import _generate_sphere_position_distribution, generate_cloud, \
+    load_cloud_from_file, get_max_distance
 from physics import gravitational_acceleration, brute_force_gravitational_acceleration
 from mock import MagicMock, patch
 import matplotlib.pyplot as plt
@@ -55,7 +56,7 @@ class TestTreeConstruction(unittest.TestCase):
         self.assertEqual(self.node.num_populated_leaves, len(self.particles))
 
 
-class TestGravitationalAcelerationCalculation(unittest.TestCase):
+class TestGravitationalAcelerationCalculationAndTreeStuff(unittest.TestCase):
 
     def setUp(self):
         self.args = MagicMock()
@@ -76,6 +77,12 @@ class TestGravitationalAcelerationCalculation(unittest.TestCase):
             q = read_particles[i]
             self.assertTrue(p == q)
             self.assertEqual(p.mass, q.mass)
+
+    def test_max_distance(self):
+        read_particles = load_cloud_from_file(self.args.path)
+        raw_vals = np.loadtxt(self.args.path, delimiter=',', skiprows=1)
+        mx = max([np.linalg.norm(i) for i in [[e[0], e[1], e[2]] for e in raw_vals]])
+        self.assertEqual(mx, get_max_distance(read_particles))
 
     def test_barnes_hut_accuracy(self):
         tree = OctreeNode(distance_to_center=1.)

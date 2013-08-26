@@ -179,7 +179,7 @@ class TestOctree(unittest.TestCase):
         self.particle = Particle(0., 0., 0., 0., 0., 0., 0., SUN_MASS)
 
     def test_insert_single_particle(self):
-        node = OctreeNode()
+        node = OctreeNode(np.linalg.norm(self.particle.position))
         node.insert_particle(self.particle)
         self.assertEqual(node.normalized_mass, self.particle.normalized_mass)
         self.assertEqual(node.n_particles, 1)
@@ -193,14 +193,14 @@ class TestOctree(unittest.TestCase):
             self.node.insert_particle(p)
 
     def test_is_leaf(self):
-        node = OctreeNode()
+        node = OctreeNode(1)
         self.assertTrue(node.is_leaf)
         node.create_empty_child_nodes()
         for n in node.childnodes:
             self.assertTrue(n.is_leaf)
 
     def test_is_internal(self):
-        node = OctreeNode()
+        node = OctreeNode(1)
         node.create_empty_child_nodes()
         self.assertFalse(node.is_leaf)
         self.assertTrue(node.is_internal_node)

@@ -188,6 +188,10 @@ def load_cloud_from_file(path):
     return particle_list
 
 
+def get_max_distance(particles):
+    return max([np.linalg.norm(p.position) for p in particles])
+
+
 def generate_cloud(args, write_file=True):
 
     if args.config:
