@@ -11,6 +11,8 @@ from mock import MagicMock
 from structures import OctreeNode
 from barneshut import barnes_hut_gravitational_acceleration
 from physics import brute_force_gravitational_acceleration
+import time
+import timeit
 
 args = MagicMock()
 args.mass = 1.
@@ -28,27 +30,39 @@ def profile_brute_force(particles):
         brute = brute_force_gravitational_acceleration(p, particles)
 
 
-def profile_barnes_hut(particles, theta):
-    tree = OctreeNode(distance_to_center=1.)
-    for i, p in enumerate(particles):
-        tree.insert_particle(p)
-
+def profile_barnes_hut(particles, tree, theta):
     for p in particles:
         barnes_hut = barnes_hut_gravitational_acceleration(p, tree, theta)
 
 
 def profile_all():
+    start = time.time()
     particles = generate_cloud(args, write_file=False)
-    profile_barnes_hut(particles, 0.1)
-    print 'Done BH 0.1'
-    profile_barnes_hut(particles, 0.25)
-    print 'Done BH 0.25'
-    profile_barnes_hut(particles, 0.5)
-    print 'Done BH 0.5'
-    profile_barnes_hut(particles, 0.95)
-    print 'Done BH 0.95'
+    tree = OctreeNode(distance_to_center=1.)
+    for i, p in enumerate(particles):
+        tree.insert_particle(p)
+    end = time.time()
+    print 'Creating tree %.5fs' % (end - start)
+    start = time.time()
+    profile_barnes_hut(particles, tree, 0.1)
+    end = time.time()
+    print 'Done BH 0.1 %.5fs' % (end - start)
+    start = time.time()
+    profile_barnes_hut(particles, tree, 0.25)
+    end = time.time()
+    print 'Done BH 0.25 %.5fs' % (end - start)
+    start = time.time()
+    profile_barnes_hut(particles, tree, 0.5)
+    end = time.time()
+    print 'Done BH 0.5 %.5fs' % (end - start)
+    start = time.time()
+    profile_barnes_hut(particles, tree, 0.95)
+    end = time.time()
+    print 'Done BH 0.95 %.5fs' % (end - start)
+    start = time.time()
     profile_brute_force(particles)
-    print 'Done brute force'
+    end = time.time()
+    print 'Done brute force %.5fs' % (end - start)
 
 
 # profile = cProfile.Profile()
