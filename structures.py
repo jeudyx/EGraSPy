@@ -15,7 +15,7 @@ class Particle(object):
     @classmethod
     def from_nparray(cls, data):
         # Asumes data array comes in the form:
-        #  X,Y,Z,VX,VY,VZ,D,Mass,RHO
+        # x,y,z,vx,vy,vz,mass,rho,temp
         return cls(data[0], data[1], data[2], data[3], data[4], data[5], data[-2], data[-3])
 
     def __init__(self, x, y, z, vx, vy, vz, rho, m):

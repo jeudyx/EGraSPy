@@ -17,7 +17,7 @@ import timeit
 
 args = MagicMock()
 args.mass = 1.
-args.nparticles = 2000
+args.nparticles = 500
 args.rho = 1E20
 args.temperature = 10.
 args.path = ''
@@ -50,22 +50,22 @@ def profile_all():
         tree.insert_particle(p)
     end = time.time()
     print 'Creating tree %.5fs' % (end - start)
-    # start = time.time()
-    # profile_barnes_hut(particles, tree, 0.1)
-    # end = time.time()
-    # print 'Done BH 0.1 %.5fs' % (end - start)
-    # start = time.time()
-    # profile_barnes_hut(particles, tree, 0.25)
-    # end = time.time()
-    # print 'Done BH 0.25 %.5fs' % (end - start)
+    start = time.time()
+    res = profile_barnes_hut(particles, tree, 0.1)
+    end = time.time()
+    print 'Done BH 0.1 %.5fs -- %s' % (end - start, str(res))
+    start = time.time()
+    res = profile_barnes_hut(particles, tree, 0.25)
+    end = time.time()
+    print 'Done BH 0.25 %.5fs -- %s' % (end - start, str(res))
     start = time.time()
     res = profile_barnes_hut(particles, tree, 0.7)
     end = time.time()
-    print 'Done BH 0.5 %.5fs -- %s' % (end - start, str(res))
-    # start = time.time()
-    # profile_barnes_hut(particles, tree, 0.95)
-    # end = time.time()
-    # print 'Done BH 0.95 %.5fs' % (end - start)
+    print 'Done BH 0.7 %.5fs -- %s' % (end - start, str(res))
+    start = time.time()
+    res = profile_barnes_hut(particles, tree, 0.95)
+    end = time.time()
+    print 'Done BH 0.95 %.5fs -- %s' % (end - start, str(res))
     start = time.time()
     res = profile_brute_force(particles)
     end = time.time()
@@ -76,4 +76,6 @@ def profile_all():
 # profile.runcall(profile_all)
 # profile.dump_stats('./profile_all.profile')
 
-cProfile.run("profile_all()")
+#cProfile.run("profile_all()")
+
+profile_all()

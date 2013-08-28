@@ -6,11 +6,11 @@ import numpy as np
 import unittest
 from structures import OctreeNode, Particle
 from generate_cloud import _generate_sphere_position_distribution, generate_cloud, \
-    load_cloud_from_file, get_max_distance
+    load_particles_from_file, get_max_distance
 from physics import gravitational_acceleration, brute_force_gravitational_acceleration
 from mock import MagicMock, patch
 import matplotlib.pyplot as plt
-from barneshut import barnes_hut_gravitational_acceleration
+from barneshut import barnes_hut_gravitational_acceleration, build_tree
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -71,7 +71,7 @@ class TestGravitationalAcelerationCalculationAndTreeStuff(unittest.TestCase):
         self.particles = generate_cloud(self.args)
 
     def test_write_read_cloud(self):
-        read_particles = load_cloud_from_file(self.args.path)
+        read_particles = load_particles_from_file(self.args.path)
         self.assertEqual(len(self.particles), len(read_particles))
         for i, p in enumerate(self.particles):
             q = read_particles[i]
@@ -79,15 +79,19 @@ class TestGravitationalAcelerationCalculationAndTreeStuff(unittest.TestCase):
             self.assertEqual(p.mass, q.mass)
 
     def test_max_distance(self):
-        read_particles = load_cloud_from_file(self.args.path)
+        read_particles = load_particles_from_file(self.args.path)
         raw_vals = np.loadtxt(self.args.path, delimiter=',', skiprows=1)
         mx = max([np.linalg.norm(i) for i in [[e[0], e[1], e[2]] for e in raw_vals]])
         self.assertEqual(mx, get_max_distance(read_particles))
 
     def test_barnes_hut_accuracy(self):
-        tree = OctreeNode(distance_to_center=1.)
-        for i, p in enumerate(self.particles):
-            tree.insert_particle(p)
+        raw_vals = np.loadtxt(self.args.path, delimiter=',', skiprows=1)
+        positions = raw_vals[:, 0:3]
+        velocities = raw_vals[:, 3:6]
+        masses = raw_vals[:, 6:7]
+        densities = raw_vals[:, 7:8]
+
+        tree = build_tree(positions, velocities, masses, densities)
 
         for p in self.particles:
             brute = brute_force_gravitational_acceleration(p, self.particles)

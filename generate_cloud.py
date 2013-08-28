@@ -180,7 +180,7 @@ def main():
     generate_cloud(args)
 
 
-def load_cloud_from_file(path):
+def load_particles_from_file(path):
     particle_list = []
     raw_data = np.loadtxt(path, delimiter=',', skiprows=1)
     for p in raw_data:
@@ -189,8 +189,10 @@ def load_cloud_from_file(path):
 
 
 def get_max_distance(particles):
-    return max([np.linalg.norm(p.position) for p in particles])
+    return get_max_distance_positions([p.position for p in particles])
 
+def get_max_distance_positions(positions):
+    return max([np.linalg.norm(i) for i in [[r[0], r[1], r[2]] for r in positions]])
 
 def generate_cloud(args, write_file=True):
 
