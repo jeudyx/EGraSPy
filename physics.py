@@ -84,6 +84,17 @@ def center_of_mass(mass1, position1, mass2, position2):
     return ((mass1 * position1) + (mass2 * position2)) / (mass1 + mass2)
 
 
+def center_of_mass_minus_particle(total_mass, center_of_mass, mass2, position2):
+    """
+    Substract a particle from the center of mass that was previously calculated considering it
+    :param center_of_mass: current center of mass
+    :param total_mass: total mass of the system
+    :param mass2: mass of the particle we want to substract
+    :param position2: position of the particle we want to substract
+    :return: center of mass without particle
+    """
+    return (center_of_mass - (mass2 * position2 / total_mass)) * (total_mass / (total_mass-mass2))
+
 def brute_force_gravitational_acceleration(p, system):
     resp = np.array([0., 0., 0.])
     for q in system:

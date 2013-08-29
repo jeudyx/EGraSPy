@@ -97,6 +97,28 @@ class TestPhysics(unittest.TestCase):
     def test_known_center_of_mass(self):
         self.assertAlmostEqual(np.linalg.norm(physics.center_of_mass(1000., -5, 100, 5)), 4.09090909)
 
+    # This test may look complex. Try to deconstruct the center of mass, particle by particle
+    def test_center_of_mass_minus_particle(self):
+        # 9 random position vectors
+        positions = np.array([np.random.rand() for i in range(0, 27)]).reshape(9, 3)
+        masses = np.array([100. * np.random.rand() for i in range(0, 9)])
+        com = np.zeros(3)
+        com_list = []
+        total_mass = 0.
+        for i, m in enumerate(masses):
+            com = physics.center_of_mass(total_mass, com, m, positions[i])
+            total_mass += m
+            com_list.append(com)
+
+        i = len(com_list) - 1
+
+        while i > 0:
+            prev_com = physics.center_of_mass_minus_particle(total_mass, com, masses[i], positions[i])
+            total_mass -= masses[i]
+            com = prev_com
+            self.assertAlmostEquals(np.linalg.norm(prev_com - com_list[i - 1]), 0.)
+            i -= 1
+
     def test_fails_total_energy_diff_len_list(self):
         with self.assertRaises(ValueError):
             physics.total_energy(np.array([0, 0]), [np.array([0, 0, 0])], [np.array([0, 0, 0])])
