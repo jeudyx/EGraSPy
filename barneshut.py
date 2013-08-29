@@ -3,7 +3,6 @@ Uses the Octree structure
 """
 
 # -*- coding: UTF-8 -*-
-import physics
 
 __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
@@ -69,26 +68,39 @@ def adjust_tree(current_node, root_node):
     if current_node.is_external_node:
         if not current_node.contains_particle(current_node.particle):
             # Particle position has changed, need to reinsert!
-            # Reinsert implies: changing mass and center of mass of upper level! (recursive?)
-            # revisar si calculo de centro de masa es reversible?
-            # crear metodo para expulsar particula hacia arriba?
-            current_node.center_of_mass = physics.center_of_mass_minus_particle(current_node.mass,
-                                                                                current_node.center_of_mass,
-                                                                                current_node.particle.mass,
-                                                                                current_node.particle.position)
+            # Reinsert implies: changing mass and center of mass of upper level! (recursive)
 
             new_particle = Particle(current_node.particle.position[0], current_node.particle.position[1],
                                     current_node.particle.position[2], current_node.particle.velocity[0],
                                     current_node.particle.velocity[1], current_node.particle.velocity[2],
                                     current_node.particle.density, current_node.particle.mass)
 
-            current_node.mass -= current_node.particle.mass
+            remove_particle_from_center_of_mass(current_node, current_node.particle)
             current_node.particle = None
+            current_node.particle.create_empty_child_nodes()
             root_node.insert_particle(new_particle)
-            # FALTA SACAR LA PARTICULA HACIA ARRIBA, PROBAR UNIT TESTS ASI A VER
             pass
 
     else:
         # Continue checking tree tree in next level
         for node in current_node.childnodes:
             adjust_tree(node, root_node)
+
+
+def remove_particle_from_center_of_mass(node, particle):
+    """
+    Substract particle contribution to center of mass and total mass of given node
+    Recursively do the same for all upper levels
+    :param node: Node from where to substract particle from center of mass
+    :param particle: particle to substract
+    """
+    node.center_of_mass = center_of_mass_minus_particle(node.mass, node.center_of_mass, node.particle.mass,
+                                                        node.particle.position)
+
+    node.mass -= node.particle.mass
+
+    if node.mass < 0.:
+        raise ValueError('Mass can not be less than zero. Mass: %s, particle: %s' % (node.mass, str(particle)))
+
+    if node.parent_node:
+        remove_particle_from_center_of_mass(node.parent_node, particle)
