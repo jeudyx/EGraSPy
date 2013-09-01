@@ -19,7 +19,8 @@ class TestBarnesHut(unittest.TestCase):
         tree = OctreeNode(distance_to_center=100)
         p = Particle(10., 10., 10., 0., 0., 0., 0., SUN_MASS)
         tree.insert_particle(p)
-        self.assertEqual(np.linalg.norm(barnes_hut_gravitational_acceleration(p, tree)), 0.0)
+        resp = np.zeros(3)
+        self.assertEqual(np.linalg.norm(barnes_hut_gravitational_acceleration(p, tree, resp)), 0.0)
 
     def test_two_equal_particles_grativity(self):
         tree = OctreeNode(distance_to_center=100)
@@ -62,8 +63,9 @@ class TestBarnesHut(unittest.TestCase):
             # theta = 0 is equivalent to brute force
             barnes_hut_zero_theta = barnes_hut_gravitational_acceleration(p, tree, theta=0.0)
             barnes_hut_0_5_theta = barnes_hut_gravitational_acceleration(p, tree, theta=0.6)
+
             self.assertAlmostEqual(np.log(np.linalg.norm(barnes_hut_zero_theta)),
-                                   np.log(np.linalg.norm(brute)))
+                                   np.log(np.linalg.norm(brute)), places=3)
 
             self.assertAlmostEqual(np.log(np.linalg.norm(barnes_hut_0_5_theta)),
                                    np.log(np.linalg.norm(brute)), places=3)
@@ -217,13 +219,13 @@ class TestOctree(unittest.TestCase):
     def test_is_leaf(self):
         node = OctreeNode(1)
         self.assertTrue(node.is_leaf)
-        node.create_empty_child_nodes()
+        node._create_empty_child_nodes()
         for n in node.childnodes:
             self.assertTrue(n.is_leaf)
 
     def test_is_internal(self):
         node = OctreeNode(1)
-        node.create_empty_child_nodes()
+        node._create_empty_child_nodes()
         self.assertFalse(node.is_leaf)
         self.assertTrue(node.is_internal_node)
 
@@ -240,7 +242,7 @@ class TestOctree(unittest.TestCase):
         self.assertTrue(node.is_external_node)
 
     def test_create_empty_child_nodes(self):
-        self.node.create_empty_child_nodes()
+        self.node._create_empty_child_nodes()
         self.assertFalse(self.node.is_leaf)
         self.assertTrue(len(self.node.childnodes) == 8)
         # Test that the center of all child nodes are contained in main node
@@ -249,11 +251,11 @@ class TestOctree(unittest.TestCase):
 
     def test_children_contained(self):
         node = OctreeNode(distance_to_center=100)
-        node.create_empty_child_nodes()
+        node._create_empty_child_nodes()
         for child_node in node.childnodes:
             for vertex in child_node._limiting_cube.vertices:
                 self.assertTrue(node._limiting_cube.contains_point(vertex))
-                child_node.create_empty_child_nodes()
+                child_node._create_empty_child_nodes()
                 for grand_childnode in child_node.childnodes:
                     for vertex2 in grand_childnode._limiting_cube.vertices:
                         contains = child_node._limiting_cube.contains_point(vertex2)
@@ -262,11 +264,11 @@ class TestOctree(unittest.TestCase):
     def test_particle_contained_in_grandchildnodes(self):
         new_node = OctreeNode(distance_to_center=100)
         new_node.insert_particle(self.particle)
-        new_node.create_empty_child_nodes()
+        new_node._create_empty_child_nodes()
         search_result_children = False
         search_result_grandchildren = False
         for child_node in new_node.childnodes:
-            child_node.create_empty_child_nodes()
+            child_node._create_empty_child_nodes()
             if child_node._limiting_cube.contains_point(self.particle.position):
                 search_result_children = True
             for grand_childnode in child_node.childnodes:
@@ -291,13 +293,13 @@ class TestOctree(unittest.TestCase):
 
     def test_deep_levels(self):
         new_node = OctreeNode(distance_to_center=50)
-        new_node.create_empty_child_nodes()
-        new_node.childnodes[0].create_empty_child_nodes()
-        new_node.childnodes[0].childnodes[0].create_empty_child_nodes()
-        new_node.childnodes[0].childnodes[0].childnodes[0].create_empty_child_nodes()
-        new_node.childnodes[0].childnodes[0].childnodes[0].childnodes[0].create_empty_child_nodes()
-        new_node.childnodes[0].childnodes[0].childnodes[0].childnodes[0].childnodes[0].create_empty_child_nodes()
-        new_node.childnodes[0].childnodes[0].childnodes[0].childnodes[0].childnodes[0].childnodes[0].create_empty_child_nodes()
+        new_node._create_empty_child_nodes()
+        new_node.childnodes[0]._create_empty_child_nodes()
+        new_node.childnodes[0].childnodes[0]._create_empty_child_nodes()
+        new_node.childnodes[0].childnodes[0].childnodes[0]._create_empty_child_nodes()
+        new_node.childnodes[0].childnodes[0].childnodes[0].childnodes[0]._create_empty_child_nodes()
+        new_node.childnodes[0].childnodes[0].childnodes[0].childnodes[0].childnodes[0]._create_empty_child_nodes()
+        new_node.childnodes[0].childnodes[0].childnodes[0].childnodes[0].childnodes[0].childnodes[0]._create_empty_child_nodes()
         self.assertEqual(new_node._level, 0)
         self.assertEqual(new_node.childnodes[0]._level, 1)
         self.assertEqual(new_node.childnodes[0].childnodes[0]._level, 2)

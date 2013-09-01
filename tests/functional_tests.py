@@ -95,8 +95,8 @@ class TestGravitationalAcelerationCalculationAndTreeStuff(unittest.TestCase):
 
         for p in self.particles:
             brute = brute_force_gravitational_acceleration(p, self.particles)
-            barnes_hut = barnes_hut_gravitational_acceleration(p, tree, theta=0.1)
-            self.assertAlmostEqual(np.log(np.linalg.norm(brute)), np.log(np.linalg.norm(barnes_hut)), places=3)
+            barnes_hut = barnes_hut_gravitational_acceleration(p, tree, theta=0.0)
+            self.assertAlmostEqual(np.log(np.linalg.norm(brute)), np.log(np.linalg.norm(barnes_hut)), places=4)
 
 
 class TestParticleGenerationVisualization(unittest.TestCase):

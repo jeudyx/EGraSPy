@@ -5,6 +5,11 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import scipy as sp
 import scipy.constants
 import numpy as np
+from math import sqrt
+
+
+def norm(p):
+    return sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2])
 
 
 def gravitational_acceleration(ri, rj, mj):
@@ -19,7 +24,8 @@ def gravitational_acceleration(ri, rj, mj):
     # Pending: considerations on smooth length
 
     diff = rj - ri
-    return sp.constants.G * mj * (diff / (np.linalg.norm(diff) ** 3))
+    diff_scalar = norm(diff)
+    return sp.constants.G * mj * (diff / (diff_scalar * diff_scalar * diff_scalar))
 
 
 def kinetic_energy(m, v):

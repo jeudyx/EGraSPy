@@ -8,9 +8,10 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
 import numpy as np
 
-from physics import gravitational_acceleration, center_of_mass_minus_particle
+from physics import gravitational_acceleration, center_of_mass_minus_particle, norm
 from structures import OctreeNode, Particle
 from generate_cloud import get_max_distance_positions
+
 
 def barnes_hut_gravitational_acceleration(body, tree, theta=0.5):
 
@@ -21,17 +22,16 @@ def barnes_hut_gravitational_acceleration(body, tree, theta=0.5):
     :param theta: thredshold for s/d in BH algorithm
     :return:
     """
-    resp = np.array([0., 0., 0.])
 
     if tree.is_external_node:
         if body != tree.particle:
             return gravitational_acceleration(body.position, tree.particle.position, tree.particle.mass)
         else:
             # If same particle, no acceleration
-            return resp
+            return np.zeros(3)
     else:
         s = tree.cube_side
-        d = np.linalg.norm(body.position - tree.center_of_mass)
+        d = norm(body.position - tree.center_of_mass)
 
         if s/d < theta:
             # If s/d < theta,treat this internal node as a single body,
@@ -39,8 +39,9 @@ def barnes_hut_gravitational_acceleration(body, tree, theta=0.5):
             return gravitational_acceleration(body.position, tree.center_of_mass, tree.mass)
         else:
             # Otherwise, run the procedure recursively on each of the current node's children
+            resp = np.zeros(3)
             for child in tree.childnodes:
-                resp += barnes_hut_gravitational_acceleration(body, child, theta)
+                resp += barnes_hut_gravitational_acceleration(body, child, theta=theta)
             return resp
 
 
@@ -77,7 +78,7 @@ def adjust_tree(current_node, root_node):
 
             remove_particle_from_center_of_mass(current_node, current_node.particle)
             current_node.particle = None
-            current_node.particle.create_empty_child_nodes()
+            current_node.particle._create_empty_child_nodes()
             root_node.insert_particle(new_particle)
             pass
 
