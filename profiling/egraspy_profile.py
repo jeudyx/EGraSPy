@@ -8,7 +8,7 @@ import cProfile
 
 from generate_cloud import generate_cloud, get_max_distance
 from mock import MagicMock
-from structures import OctreeNode
+from structures import OctreeNode, Particle
 from barneshut import barnes_hut_gravitational_acceleration, build_tree, adjust_tree
 from physics import brute_force_gravitational_acceleration
 import time
@@ -72,7 +72,31 @@ def profile_all():
     print 'Done brute force %.5fs -- %s' % (end - start, str(res))
 
 
-profile_all()
+def compare_build_adjust():
+    positions = np.array([[n, n, n] for n in np.arange(15000.0)])
+    velocities = np.array([[n, n, n] for n in np.zeros(15000.0)])
+    masses = np.ones(15000)
+    densities = np.zeros(15000)
+    particles = []
+    start = time.time()
+    tree = build_tree(positions, velocities, masses, densities, out_particles=particles)
+    end = time.time()
+    print 'Creating tree %.5fs' % (end - start)
+    #print str(tree)
+    for i, p in enumerate(particles):
+        if np.random.random() >= 0.1 and i < len(particles) - 10:
+            particles[i].position[0] += 5. * np.random.random()
+            particles[i].position[1] += 5. * np.random.random()
+            particles[i].position[2] += 5. * np.random.random()
+
+    start = time.time()
+    adjust_tree(tree, tree)
+    end = time.time()
+    print '========================================================='
+    print 'Adjusting tree %.5fs' % (end - start)
+    #print str(tree)
+
+compare_build_adjust()
 exit()
 
 args.nparticles = 10000

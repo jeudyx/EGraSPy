@@ -82,7 +82,6 @@ def adjust_tree(current_node, root_node):
             current_node.particle = None
             current_node._create_empty_child_nodes()
             root_node.insert_particle(new_particle)
-
     else:
         # Continue checking tree tree in next level
         for node in current_node.childnodes:

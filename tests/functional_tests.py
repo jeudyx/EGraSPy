@@ -109,7 +109,7 @@ class TestCalculationsIntegrationAndTree(unittest.TestCase):
         print str(tree)
         particles[0].position = np.array([1.5, 1.5, 1.5])
         particles[5].position = np.array([9.5, 9.5, 9.5])
-        particles[9].position = np.array([0.5, 0.5, 0.5])
+        particles[9].position = np.array([21.5, 21.5, 21.5])
         adjust_tree(tree, tree)
         print '---------------------------------------------------'
         print str(tree)
