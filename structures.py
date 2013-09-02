@@ -250,12 +250,6 @@ class Cube(Volume):
         self.vertices = np.zeros((8,3))  # 8 3D vectors
         self.center = center  # 3D vector (numpy array) marking the center of the Cube
         self.distance_to_center = distance_to_center
-        self.min_x = np.inf
-        self.min_y = np.inf
-        self.min_z = np.inf
-        self.max_x = -np.inf
-        self.max_y = -np.inf
-        self.max_z = -np.inf
 
         self.side = self.__create_vertices__()
 
@@ -264,12 +258,9 @@ class Cube(Volume):
         for i in range(0, 8):
             vertex = (self.distance_to_center * cube_direction_matrix[i]) + self.center
             self.vertices[i] += vertex
-            self.min_x = min(vertex[0], self.min_x)
-            self.min_y = min(vertex[1], self.min_y)
-            self.min_z = min(vertex[2], self.min_z)
-            self.max_x = max(vertex[0], self.max_x)
-            self.max_y = max(vertex[1], self.max_y)
-            self.max_z = max(vertex[2], self.max_z)
+
+        self.min = np.amin(self.vertices, axis=0)
+        self.max = np.amax(self.vertices, axis=0)
 
         return physics.norm(self.vertices[0] - self.vertices[1])
 
@@ -279,6 +270,6 @@ class Cube(Volume):
         :param point: 3D coordinates of a point (numpy array)
         :return: True or False depending if the point is contained within the volumen of the cube
         """
-        return point[0] >= self.min_x and point[1] >= self.min_y and point[2] >= self.min_z and point[0] <= self.max_x \
-                   and point[1] <= self.max_y and point[2] <= self.max_z
+        return point[0] >= self.min[0] and point[1] >= self.min[1] and point[2] >= self.min[2] and point[0] <= self.max[0] \
+                   and point[1] <= self.max[1] and point[2] <= self.max[2]
 

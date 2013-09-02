@@ -17,7 +17,7 @@ import timeit
 
 args = MagicMock()
 args.mass = 1.
-args.nparticles = 1000
+args.nparticles = 10000
 args.rho = 1E20
 args.temperature = 10.
 args.path = ''
@@ -97,5 +97,5 @@ def profile_one():
 # profile.runcall(profile_one)
 # profile.dump_stats('./profile_all.profile')
 
-#cProfile.run("profile_one()")
+cProfile.run("profile_one()")
 #cProfile.run("profile_create_tree()")
