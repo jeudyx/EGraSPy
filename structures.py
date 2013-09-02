@@ -74,6 +74,7 @@ class OctreeNode(object):
 
     def __init__(self, distance_to_center, center=np.zeros(3), parent=None):
         self.childnodes = []
+        self._distance_to_center = distance_to_center
         self.mass = 0.
         self.center_of_mass = np.zeros(3)
         self.parent_node = parent
@@ -82,6 +83,18 @@ class OctreeNode(object):
         self.particle = None
         self.n_particles = 0
         self.is_leaf = True
+
+    def __str__(self):
+        if self.is_external_node:
+            return ''.join(['\t' for i in range(0, self._level)]) + '[Leaf: %s, mass: %s, level: %s]\n' \
+                   % (self.particle.position, self.particle.mass, self._level)
+        else:
+            resp = ''.join(['\t' for i in range(0, self._level)]) + '[Internal: # particles: %d, %s, mass %s, level: %s]\n' % \
+                   (self.n_particles, self.center_of_mass, self.mass, self._level)
+            for c in self.childnodes:
+                resp += str(c)
+
+            return resp
 
     @property
     def cube_side(self):
@@ -125,10 +138,6 @@ class OctreeNode(object):
             for child_node in self.childnodes:
                 num += child_node.num_populated_leaves
             return num
-
-    def __str__(self):
-        return "Level: %s, n_particles: %s. Total mass: %s, COM: %s" % (self._level, self.n_particles,
-                                                                        self.normalized_mass, self.center_of_mass)
 
     def contains_particle(self, particle):
         return self._limiting_cube.contains_point(particle.position)

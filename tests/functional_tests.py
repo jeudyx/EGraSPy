@@ -10,7 +10,8 @@ from generate_cloud import _generate_sphere_position_distribution, generate_clou
 from physics import gravitational_acceleration, brute_force_gravitational_acceleration
 from mock import MagicMock, patch
 import matplotlib.pyplot as plt
-from barneshut import barnes_hut_gravitational_acceleration, build_tree
+from barneshut import barnes_hut_gravitational_acceleration, build_tree, adjust_tree
+from integration import leapfrog_step
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -56,13 +57,13 @@ class TestTreeConstruction(unittest.TestCase):
         self.assertEqual(self.node.num_populated_leaves, len(self.particles))
 
 
-class TestGravitationalAcelerationCalculationAndTreeStuff(unittest.TestCase):
+class TestCalculationsIntegrationAndTree(unittest.TestCase):
 
     def setUp(self):
         self.args = MagicMock()
         self.args.mass = 1.
         self.args.nparticles = 100
-        self.args.rho = 1E20
+        self.args.rho = 1E-14
         self.args.temperature = 10.
         self.args.path = './data/functional_test_cloud.csv'
         self.args.rotation = 0.
@@ -98,6 +99,20 @@ class TestGravitationalAcelerationCalculationAndTreeStuff(unittest.TestCase):
             barnes_hut = barnes_hut_gravitational_acceleration(p, tree, theta=0.0)
             self.assertAlmostEqual(np.log(np.linalg.norm(brute)), np.log(np.linalg.norm(barnes_hut)), places=4)
 
+    def test_compare_adjusted_tree(self):
+        positions = np.array([[n, n, n] for n in np.arange(10.0)])
+        velocities = np.array([[n, n, n] for n in np.zeros(10.0)])
+        masses = np.ones(10)
+        densities = np.zeros(10)
+        particles = []
+        tree = build_tree(positions, velocities, masses, densities, out_particles=particles)
+        print str(tree)
+        particles[0].position = np.array([1.5, 1.5, 1.5])
+        particles[5].position = np.array([9.5, 9.5, 9.5])
+        particles[9].position = np.array([0.5, 0.5, 0.5])
+        adjust_tree(tree, tree)
+        print '---------------------------------------------------'
+        print str(tree)
 
 class TestParticleGenerationVisualization(unittest.TestCase):
 
@@ -106,18 +121,20 @@ class TestParticleGenerationVisualization(unittest.TestCase):
         args = MagicMock()
         args.config = '../params/test_cloud.json'
         particles = generate_cloud(args, write_file=False)
+        visualize_particles(particles)
 
 
-        x = [p.position[0] for p in particles]
-        y = [p.position[1] for p in particles]
-        z = [p.position[2] for p in particles]
+def visualize_particles(particles):
+    x = [p.position[0] for p in particles]
+    y = [p.position[1] for p in particles]
+    z = [p.position[2] for p in particles]
 
-        fig = plt.figure("TestParticleGenerationVisualization.test_generate_cloud")
+    fig = plt.figure("TestParticleGenerationVisualization.test_generate_cloud")
 
-        ax = plt.axes(projection='3d')
+    ax = plt.axes(projection='3d')
 
-        ax.plot(x, y, z, '.')
+    ax.plot(x, y, z, '.')
 
-        plt.show()
+    plt.show()
 
 unittest.main()

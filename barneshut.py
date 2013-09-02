@@ -45,13 +45,14 @@ def barnes_hut_gravitational_acceleration(body, tree, theta=0.5):
             return resp
 
 
-def build_tree(positions, velocities, masses, densities):
+def build_tree(positions, velocities, masses, densities, out_particles=[]):
     """
     Build an Octree from given values
     :param positions:
     :param velocities:
     :param masses:
     :param densities:
+    :param out_particles:
     :return:
     """
     # Get the maximum distance to build tree. Too slow? profile and check
@@ -62,6 +63,7 @@ def build_tree(positions, velocities, masses, densities):
         p = Particle.from_nparray(np.array([r[0], r[1], r[2], velocities[i][0], velocities[i][1],
                                             velocities[i][2], masses[i], densities[i], 0.]))
         tree.insert_particle(p)
+        out_particles.append(p)
     return tree
 
 
@@ -78,9 +80,8 @@ def adjust_tree(current_node, root_node):
 
             remove_particle_from_center_of_mass(current_node, current_node.particle)
             current_node.particle = None
-            current_node.particle._create_empty_child_nodes()
+            current_node._create_empty_child_nodes()
             root_node.insert_particle(new_particle)
-            pass
 
     else:
         # Continue checking tree tree in next level
@@ -95,10 +96,10 @@ def remove_particle_from_center_of_mass(node, particle):
     :param node: Node from where to substract particle from center of mass
     :param particle: particle to substract
     """
-    node.center_of_mass = center_of_mass_minus_particle(node.mass, node.center_of_mass, node.particle.mass,
-                                                        node.particle.position)
+    node.center_of_mass = center_of_mass_minus_particle(node.mass, node.center_of_mass, particle.mass, particle.position)
 
-    node.mass -= node.particle.mass
+    node.mass -= particle.mass
+    node.n_particles -= 1
 
     if node.mass < 0.:
         raise ValueError('Mass can not be less than zero. Mass: %s, particle: %s' % (node.mass, str(particle)))

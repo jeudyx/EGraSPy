@@ -13,7 +13,6 @@ import argparse
 import numpy as np
 import csv
 import json
-from scipy.constants import parsec
 from structures import Sphere, Particle
 from physics import calculate_radius
 from astro_constants import SUN_MASS
@@ -206,7 +205,7 @@ def generate_cloud(args, write_file=True):
     # Assume for now spherical distribution centered on 0,0,0
     # Since mass comes in solar masses, and density in gr/cm³, need to convert to kg and kg/m³
     # result is expresses in parsecs
-    radius = calculate_radius(reader.mass * SUN_MASS, reader.density*1000.0) / parsec
+    radius = calculate_radius(reader.mass * SUN_MASS, reader.density*1000.0)
     positions = generate_positions(radius, reader.center, reader.n_particles)
     masses = generate_mass_distribution(reader.mass, reader.n_particles, reader.variation)
     velocities = generate_velocity_distribution(reader.n_particles, reader.rotation)
