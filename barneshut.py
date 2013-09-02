@@ -96,7 +96,10 @@ def remove_particle_from_center_of_mass(node, particle):
     :param node: Node from where to substract particle from center of mass
     :param particle: particle to substract
     """
-    node.center_of_mass = center_of_mass_minus_particle(node.mass, node.center_of_mass, particle.mass, particle.position)
+
+    if particle.mass - node.mass > 0.:
+        node.center_of_mass = center_of_mass_minus_particle(node.mass, node.center_of_mass, particle.mass,
+                                                            particle.position)
 
     node.mass -= particle.mass
     node.n_particles -= 1

@@ -152,7 +152,7 @@ class OctreeNode(object):
         self.is_leaf = False
 
     def insert_particle(self, particle):
-        if self.mass == 0:
+        if self.mass == 0 and self.is_leaf:
             if self._limiting_cube.contains_point(particle.position):
                 # Node was empty, insert here
                 self.mass = particle.mass
