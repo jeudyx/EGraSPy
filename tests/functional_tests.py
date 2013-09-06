@@ -3,6 +3,7 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 # -*- coding: UTF-8 -*-
 
 import numpy as np
+import scipy as sp
 import unittest
 from structures import OctreeNode, Particle
 from generate_cloud import _generate_sphere_position_distribution, generate_cloud, \
@@ -11,7 +12,8 @@ from physics import gravitational_acceleration, brute_force_gravitational_accele
 from mock import MagicMock, patch
 import matplotlib.pyplot as plt
 from barneshut import barnes_hut_gravitational_acceleration, build_tree, adjust_tree
-from integration import leapfrog_step
+from integration import leapfrog_step, get_system_total_energy
+from astro_constants import SUN_MASS, EARTH_MASS
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -109,10 +111,11 @@ class TestCalculationsIntegrationAndTree(unittest.TestCase):
         print str(tree)
         particles[0].position = np.array([1.5, 1.5, 1.5])
         particles[5].position = np.array([9.5, 9.5, 9.5])
-        particles[9].position = np.array([21.5, 21.5, 21.5])
+        #particles[9].position = np.array([21.5, 21.5, 21.5])
         adjust_tree(tree, tree)
         print '---------------------------------------------------'
         print str(tree)
+
 
 class TestParticleGenerationVisualization(unittest.TestCase):
 
@@ -136,5 +139,44 @@ def visualize_particles(particles):
     ax.plot(x, y, z, '.')
 
     plt.show()
+
+
+class TestIntegration(unittest.TestCase):
+
+    PATH = './data/testcloud.csv'
+
+    def setUp(self):
+        path = './data/functional_test_cloud.csv'
+        raw_vals = np.loadtxt(path, delimiter=',', skiprows=1)
+        positions = raw_vals[:, 0:3]
+        velocities = raw_vals[:, 3:6]
+        masses = raw_vals[:, 6:7]
+        densities = raw_vals[:, 7:8]
+        self.particles = []
+        self.tree = build_tree(positions, velocities, masses, densities, out_particles=self.particles)
+
+    def xtest_energy_conserved(self):
+        accelerations_i = np.zeros(len(self.particles))
+        e_i = get_system_total_energy(self.particles)
+        for i in range(0, 10):
+            accelerations_i = leapfrog_step(self.particles, self.tree, 1000000., accelerations_i)
+        e_f = get_system_total_energy(self.particles)
+        self.assertAlmostEqual(e_i, e_f, places=2)
+
+    def test_small_system_conservation(self):
+        star1 = Particle(-10.9 * sp.constants.astronomical_unit, 0., 0., 0., 2.1E3, 0., 0., SUN_MASS*1.09)
+        star2 = Particle(12.8 * sp.constants.astronomical_unit, 0., 0., 0., -2.1E3, 0., 0., SUN_MASS*0.9)
+        planet = Particle(-9.9 * sp.constants.astronomical_unit, 0., 0., 0., -3.1E4, 0., 0., EARTH_MASS)
+        particles = [star1, star2, planet]
+        tree = OctreeNode(distance_to_center=(10.9+12.8)* sp.constants.astronomical_unit)
+        tree.insert_particle(star1)
+        tree.insert_particle(star2)
+        tree.insert_particle(planet)
+        steps = 366 * 10000
+        dt = 60. * 60.
+        accelerations_i = np.array([[n, n, n] for n in np.zeros(3.0)])
+        while steps:
+            accelerations_i = leapfrog_step(particles, tree, dt, accelerations_i)
+            steps -= 1
 
 unittest.main()

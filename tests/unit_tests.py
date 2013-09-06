@@ -11,7 +11,7 @@ from astro_constants import SUN_MASS
 from generate_cloud import generate_mass_distribution, _adjust_mass, _generate_random_positions_from_a_to_b, \
     _generate_sphere_position_distribution, ParameterReader, generate_cloud
 from barneshut import barnes_hut_gravitational_acceleration
-
+from integration import leapfrog_step
 
 class TestBarnesHut(unittest.TestCase):
 
@@ -415,5 +415,24 @@ class TestCloudGeneration(unittest.TestCase):
                 particles = generate_cloud(args, write_file=False)
                 self.assertEqual(len(particles), mock_json["n_particles"])
                 self.assertAlmostEqual(particles[0].mass, mock_json["mass"] / mock_json["n_particles"])
+
+
+class TestIntegration(unittest.TestCase):
+
+    def test_leap_frog(self):
+        tree = MagicMock()
+        particles = [MagicMock() for i in range(0, 10)]
+        accelerations_i = [0. for i in range(0, 10)]
+        with patch("barneshut.barnes_hut_gravitational_acceleration", return_value=0.):
+            resp = leapfrog_step(particles, tree, 0., accelerations_i)
+            self.assertEqual(len(resp), len(accelerations_i))
+
+    def test_leap_frog_different_sizes(self):
+        tree = MagicMock()
+        particles = [MagicMock() for i in range(0, 10)]
+        accelerations_i = [0. for i in range(0, 11)]
+        with self.assertRaises(ValueError):
+            resp = leapfrog_step(particles, tree, 0., accelerations_i)
+
 
 unittest.main()

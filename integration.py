@@ -9,7 +9,7 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import numpy as np
 from barneshut import barnes_hut_gravitational_acceleration, build_tree
 from structures import OctreeNode, Particle
-
+from physics import total_energy
 
 def leapfrog_step_vectorized(positions, velocities, masses, densities, accelerations_i, dt, tree=None, theta=0.5):
     """
@@ -60,6 +60,9 @@ def leapfrog_step(particles, tree, dt, accelerations_i, theta=0.5):
 
     accelerations = []
 
+    if len(particles) != len(accelerations_i):
+        raise ValueError("Particles and accelerations must be the same.")
+
     for i, p in enumerate(particles):
         velocity_half = p.velocity + (accelerations_i[i] * (dt / 2.))
         p.position += velocity_half * dt
@@ -68,3 +71,10 @@ def leapfrog_step(particles, tree, dt, accelerations_i, theta=0.5):
         p.velocity += velocity_half + (acceleration * (dt / 2.))
 
     return accelerations
+
+
+def get_system_total_energy(particles):
+    masses = [p.mass for p in particles]
+    positions = [p.position for p in particles]
+    velocities = [p.velocity for p in particles]
+    return total_energy(masses, velocities, positions)
