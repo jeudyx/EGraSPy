@@ -9,7 +9,7 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 import numpy as np
 from barneshut import barnes_hut_gravitational_acceleration, build_tree
 from structures import OctreeNode, Particle
-from physics import total_energy
+from physics import total_energy, brute_force_gravitational_acceleration
 
 def leapfrog_step_vectorized(positions, velocities, masses, densities, accelerations_i, dt, tree=None, theta=0.5):
     """
@@ -39,12 +39,12 @@ def leapfrog_step_vectorized(positions, velocities, masses, densities, accelerat
                                                  masses[i], densities[i], 0.])) for i, r in enumerate(positions)]
 
     accelerations = np.array([barnes_hut_gravitational_acceleration(p, tree, theta) for p in particles])
-    velocities += velocities_half + (accelerations * (dt / 2.))
+    velocities = velocities_half + (accelerations * (dt / 2.))
 
     return accelerations
 
 
-def leapfrog_step(particles, tree, dt, accelerations_i, theta=0.5):
+def leapfrog_step(dt, accelerations_i, gravity_function, **kwargs):
     """
     Implements Leap-Frog method, with the kick-drift-kick version.
     All arrays are assumed to be numpy arrays of the same size
@@ -60,15 +60,17 @@ def leapfrog_step(particles, tree, dt, accelerations_i, theta=0.5):
 
     accelerations = []
 
+    particles = kwargs['particles']
+
     if len(particles) != len(accelerations_i):
         raise ValueError("Particles and accelerations must be the same.")
 
     for i, p in enumerate(particles):
         velocity_half = p.velocity + (accelerations_i[i] * (dt / 2.))
-        p.position += velocity_half * dt
-        acceleration = barnes_hut_gravitational_acceleration(p, tree, theta)
+        p.position += (velocity_half * dt)
+        acceleration = gravity_function(p, **kwargs)
         accelerations.append(acceleration)
-        p.velocity += velocity_half + (acceleration * (dt / 2.))
+        p.velocity = velocity_half + (acceleration * (dt / 2.))
 
     return accelerations
 

@@ -6,10 +6,12 @@ import scipy as sp
 import scipy.constants
 import numpy as np
 from math import sqrt
+#import warnings
 
+#warnings.filterwarnings('error')
 
 def norm(p):
-    return sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2])
+    return sqrt((p[0] * p[0]) + (p[1] * p[1]) + (p[2] * p[2]))
 
 
 def gravitational_acceleration(ri, rj, mj):
@@ -101,9 +103,10 @@ def center_of_mass_minus_particle(total_mass, center_of_mass, mass2, position2):
     """
     return (center_of_mass - (mass2 * position2 / total_mass)) * (total_mass / (total_mass-mass2))
 
-def brute_force_gravitational_acceleration(p, system):
-    resp = np.array([0., 0., 0.])
-    for q in system:
+def brute_force_gravitational_acceleration(p, **kwargs):
+    resp = np.zeros(3.)
+    particles = kwargs['particles']
+    for q in particles:
         if p != q:
             resp += gravitational_acceleration(p.position, q.position, q.mass)
 

@@ -20,7 +20,7 @@ class TestBarnesHut(unittest.TestCase):
         p = Particle(10., 10., 10., 0., 0., 0., 0., SUN_MASS)
         tree.insert_particle(p)
         resp = np.zeros(3)
-        self.assertEqual(np.linalg.norm(barnes_hut_gravitational_acceleration(p, tree, resp)), 0.0)
+        self.assertEqual(np.linalg.norm(barnes_hut_gravitational_acceleration(p, tree=tree)), 0.0)
 
     def test_two_equal_particles_grativity(self):
         tree = OctreeNode(distance_to_center=100)
@@ -28,8 +28,8 @@ class TestBarnesHut(unittest.TestCase):
         p2 = Particle(20., 20., 20., 0., 0., 0., 0., SUN_MASS)
         tree.insert_particle(p1)
         tree.insert_particle(p2)
-        self.assertEqual(np.linalg.norm(barnes_hut_gravitational_acceleration(p1, tree)),
-                         np.linalg.norm(barnes_hut_gravitational_acceleration(p2, tree)))
+        self.assertEqual(np.linalg.norm(barnes_hut_gravitational_acceleration(p1, tree=tree)),
+                         np.linalg.norm(barnes_hut_gravitational_acceleration(p2, tree=tree)))
 
     def test_compare_brute_force(self):
         tree = OctreeNode(distance_to_center=100)
@@ -38,9 +38,9 @@ class TestBarnesHut(unittest.TestCase):
         tree.insert_particle(p1)
         tree.insert_particle(p2)
         brute1 = physics.gravitational_acceleration(p1.position, p2.position, p2.mass)
-        barnes_1 = barnes_hut_gravitational_acceleration(p1, tree)
+        barnes_1 = barnes_hut_gravitational_acceleration(p1, tree=tree)
         brute2 = physics.gravitational_acceleration(p2.position, p1.position, p1.mass)
-        barnes_2 = barnes_hut_gravitational_acceleration(p2, tree)
+        barnes_2 = barnes_hut_gravitational_acceleration(p2, tree=tree)
         self.assertTrue(all(barnes_1 == brute1))
         self.assertTrue(all(barnes_2 == brute2))
 
@@ -61,8 +61,8 @@ class TestBarnesHut(unittest.TestCase):
                 if p != q:
                     brute += physics.gravitational_acceleration(p.position, q.position, q.mass)
             # theta = 0 is equivalent to brute force
-            barnes_hut_zero_theta = barnes_hut_gravitational_acceleration(p, tree, theta=0.0)
-            barnes_hut_0_5_theta = barnes_hut_gravitational_acceleration(p, tree, theta=0.6)
+            barnes_hut_zero_theta = barnes_hut_gravitational_acceleration(p, tree=tree, theta=0.0)
+            barnes_hut_0_5_theta = barnes_hut_gravitational_acceleration(p, tree=tree, theta=0.6)
 
             self.assertAlmostEqual(np.log(np.linalg.norm(barnes_hut_zero_theta)),
                                    np.log(np.linalg.norm(brute)), places=3)
@@ -422,17 +422,21 @@ class TestIntegration(unittest.TestCase):
     def test_leap_frog(self):
         tree = MagicMock()
         particles = [MagicMock() for i in range(0, 10)]
-        accelerations_i = [0. for i in range(0, 10)]
-        with patch("barneshut.barnes_hut_gravitational_acceleration", return_value=0.):
-            resp = leapfrog_step(particles, tree, 0., accelerations_i)
-            self.assertEqual(len(resp), len(accelerations_i))
+        accelerations_i = [np.zeros(3.) for i in range(0, 10)]
+        with patch("barneshut.barnes_hut_gravitational_acceleration", return_value=np.zeros(3.)):
+            with patch("physics.gravitational_acceleration", return_value=np.zeros(3.)):
+                resp = leapfrog_step(0., accelerations_i, barnes_hut_gravitational_acceleration,
+                                     particles=particles, tree=tree, theta=0.5)
+                self.assertEqual(len(resp), len(accelerations_i))
 
     def test_leap_frog_different_sizes(self):
         tree = MagicMock()
         particles = [MagicMock() for i in range(0, 10)]
         accelerations_i = [0. for i in range(0, 11)]
         with self.assertRaises(ValueError):
-            resp = leapfrog_step(particles, tree, 0., accelerations_i)
+            # dt, accelerations_i, gravity_function, **kwargs
+            resp = leapfrog_step(0., accelerations_i, barnes_hut_gravitational_acceleration,
+                                 particles=particles, tree=tree, theta=0.5)
 
 
 unittest.main()

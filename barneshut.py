@@ -13,7 +13,7 @@ from structures import OctreeNode, Particle
 from generate_cloud import get_max_distance_positions
 
 
-def barnes_hut_gravitational_acceleration(body, tree, theta=0.5):
+def barnes_hut_gravitational_acceleration(body, **kwargs):
 
     """
 
@@ -23,6 +23,9 @@ def barnes_hut_gravitational_acceleration(body, tree, theta=0.5):
     :return:
     """
 
+    tree = kwargs['tree']
+    theta = kwargs.get('theta', 0.5)
+
     if tree.is_external_node:
         if body != tree.particle:
             return gravitational_acceleration(body.position, tree.particle.position, tree.particle.mass)
@@ -31,9 +34,13 @@ def barnes_hut_gravitational_acceleration(body, tree, theta=0.5):
             return np.zeros(3)
     else:
         s = tree.cube_side
-        d = norm(body.position - tree.center_of_mass)
+        try:
+            d = norm(body.position - tree.center_of_mass)
+        except Warning:
+            d = 1
+            pass
 
-        if s/d < theta:
+        if s / d < theta:
             # If s/d < theta,treat this internal node as a single body,
             # and calculate the force it exerts on body b, and add this amount to b's net force
             return gravitational_acceleration(body.position, tree.center_of_mass, tree.mass)
@@ -41,7 +48,9 @@ def barnes_hut_gravitational_acceleration(body, tree, theta=0.5):
             # Otherwise, run the procedure recursively on each of the current node's children
             resp = np.zeros(3)
             for child in tree.childnodes:
-                resp += barnes_hut_gravitational_acceleration(body, child, theta=theta)
+                if child.mass == 0. or child.n_particles == 0:
+                    continue
+                resp += barnes_hut_gravitational_acceleration(body, tree=child, theta=theta)
             return resp
 
 
@@ -80,7 +89,7 @@ def adjust_tree(current_node, root_node):
 
             remove_particle_from_center_of_mass(current_node, current_node.particle)
             current_node.particle = None
-            current_node._create_empty_child_nodes()
+            # current_node._create_empty_child_nodes()
             root_node.insert_particle(new_particle)
     else:
         # Continue checking tree tree in next level
@@ -96,12 +105,13 @@ def remove_particle_from_center_of_mass(node, particle):
     :param particle: particle to substract
     """
 
-    if particle.mass - node.mass > 0.:
+    node.n_particles -= 1
+
+    if node.n_particles > 0.:
         node.center_of_mass = center_of_mass_minus_particle(node.mass, node.center_of_mass, particle.mass,
                                                             particle.position)
 
     node.mass -= particle.mass
-    node.n_particles -= 1
 
     if node.mass < 0.:
         raise ValueError('Mass can not be less than zero. Mass: %s, particle: %s' % (node.mass, str(particle)))

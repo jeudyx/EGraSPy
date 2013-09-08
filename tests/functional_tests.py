@@ -8,13 +8,13 @@ import unittest
 from structures import OctreeNode, Particle
 from generate_cloud import _generate_sphere_position_distribution, generate_cloud, \
     load_particles_from_file, get_max_distance
-from physics import gravitational_acceleration, brute_force_gravitational_acceleration
+from physics import gravitational_acceleration, brute_force_gravitational_acceleration, norm
 from mock import MagicMock, patch
 import matplotlib.pyplot as plt
 from barneshut import barnes_hut_gravitational_acceleration, build_tree, adjust_tree
 from integration import leapfrog_step, get_system_total_energy
 from astro_constants import SUN_MASS, EARTH_MASS
-from mpl_toolkits.mplot3d import Axes3D
+#from mpl_toolkits.mplot3d import Axes3D
 
 
 class TestParticleDistributionVisualization(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestParticleDistributionVisualization(unittest.TestCase):
     def setUp(self):
         self.points = _generate_sphere_position_distribution(10, [0., 0., 0.], 10000)
 
-    def test_sphere(self):
+    def xtest_sphere(self):
         x = self.points[:,0]
         y = self.points[:,1]
         z = self.points[:,2]
@@ -97,8 +97,8 @@ class TestCalculationsIntegrationAndTree(unittest.TestCase):
         tree = build_tree(positions, velocities, masses, densities)
 
         for p in self.particles:
-            brute = brute_force_gravitational_acceleration(p, self.particles)
-            barnes_hut = barnes_hut_gravitational_acceleration(p, tree, theta=0.0)
+            brute = brute_force_gravitational_acceleration(p, particles=self.particles)
+            barnes_hut = barnes_hut_gravitational_acceleration(p, tree=tree, theta=0.0)
             self.assertAlmostEqual(np.log(np.linalg.norm(brute)), np.log(np.linalg.norm(barnes_hut)), places=4)
 
     def test_compare_adjusted_tree(self):
@@ -119,7 +119,7 @@ class TestCalculationsIntegrationAndTree(unittest.TestCase):
 
 class TestParticleGenerationVisualization(unittest.TestCase):
 
-    def test_generate_cloud(self):
+    def xtest_generate_cloud(self):
 
         args = MagicMock()
         args.config = '../params/test_cloud.json'
@@ -172,11 +172,32 @@ class TestIntegration(unittest.TestCase):
         tree.insert_particle(star1)
         tree.insert_particle(star2)
         tree.insert_particle(planet)
-        steps = 366 * 10000
+        steps = 10000 #366 * 100 * 24
         dt = 60. * 60.
         accelerations_i = np.array([[n, n, n] for n in np.zeros(3.0)])
+        e_i = get_system_total_energy(particles)
         while steps:
-            accelerations_i = leapfrog_step(particles, tree, dt, accelerations_i)
+            accelerations_i = leapfrog_step(dt, accelerations_i, barnes_hut_gravitational_acceleration,
+                                            particles=particles, tree=tree, theta=0.5)
+
+            accelerations_i = leapfrog_step(dt, accelerations_i, brute_force_gravitational_acceleration,
+                                            particles=particles)
+
+            #print '%s ==========================================' % steps
+            #print accelerations_i
+            #print [p.velocity for p in particles]
+            #print '%s ==========================================' % steps
+            # adjust_tree(tree, tree)
+#            tree = OctreeNode(distance_to_center=max([norm(p.position) for p in particles]))
+#            tree.insert_particle(star1)
+#            tree.insert_particle(star2)
+#            tree.insert_particle(planet)
+
             steps -= 1
+            if steps % 1000 == 0:
+                print "Steps: %s" % steps
+
+        e_f = get_system_total_energy(particles)
+        self.assertAlmostEqual(e_i/e_f, 1., places=2)
 
 unittest.main()
