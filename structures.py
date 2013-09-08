@@ -212,8 +212,11 @@ class OctreeNode(object):
                 if child_node.contains_particle(particle):
                     child_node.insert_particle(particle)
                     return
-            raise Exception("Particle was not contained by any childnode. Particle position: %s" % particle.position)
+            raise OctreeException("Particle was not contained by any childnode. Particle position: %s" % particle.position)
 
+
+class OctreeException(Exception):
+    pass
 
 class Volume(object):
     """Abstract representation of any calculate_volume"""

@@ -3,18 +3,19 @@ __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 # -*- coding: UTF-8 -*-
 
 import numpy as np
-import scipy as sp
 import unittest
-from structures import OctreeNode, Particle
+from structures import OctreeNode, Particle, OctreeException
 from generate_cloud import _generate_sphere_position_distribution, generate_cloud, \
     load_particles_from_file, get_max_distance
 from physics import gravitational_acceleration, brute_force_gravitational_acceleration, norm
 from mock import MagicMock, patch
 import matplotlib.pyplot as plt
-from barneshut import barnes_hut_gravitational_acceleration, build_tree, adjust_tree
+from barneshut import barnes_hut_gravitational_acceleration, build_tree, adjust_tree, need_to_rebuild
 from integration import leapfrog_step, get_system_total_energy
 from astro_constants import SUN_MASS, EARTH_MASS
-#from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import animation
+import scipy as sp
 
 
 class TestParticleDistributionVisualization(unittest.TestCase):
@@ -155,6 +156,17 @@ class TestIntegration(unittest.TestCase):
         self.particles = []
         self.tree = build_tree(positions, velocities, masses, densities, out_particles=self.particles)
 
+        self.history_x1 = []
+        self.history_y1 = []
+
+        self.history_x2 = []
+        self.history_y2 = []
+
+        self.history_x3 = []
+        self.history_y3 = []
+        self.subplot = None
+
+
     def xtest_energy_conserved(self):
         accelerations_i = np.zeros(len(self.particles))
         e_i = get_system_total_energy(self.particles)
@@ -164,40 +176,80 @@ class TestIntegration(unittest.TestCase):
         self.assertAlmostEqual(e_i, e_f, places=2)
 
     def test_small_system_conservation(self):
-        star1 = Particle(-10.9 * sp.constants.astronomical_unit, 0., 0., 0., 2.1E3, 0., 0., SUN_MASS*1.09)
-        star2 = Particle(12.8 * sp.constants.astronomical_unit, 0., 0., 0., -2.1E3, 0., 0., SUN_MASS*0.9)
-        planet = Particle(-9.9 * sp.constants.astronomical_unit, 0., 0., 0., -3.1E4, 0., 0., EARTH_MASS)
+        star1 = Particle(-10.9 * 149597870691.0, 0., 0., 0., 2.1E3, 0., 0., SUN_MASS*1.09)
+        star2 = Particle(12.8 * 149597870691.0, 0., 0., 0., -2.1E3, 0., 0., SUN_MASS*0.9)
+        planet = Particle(-9.9 * 149597870691.0, 0., 0., 0., -3.1E4, 0., 0., EARTH_MASS)
         particles = [star1, star2, planet]
-        tree = OctreeNode(distance_to_center=(10.9+12.8)* sp.constants.astronomical_unit)
+        tree = OctreeNode(distance_to_center=(10.9+12.8)* 149597870691.0)
         tree.insert_particle(star1)
         tree.insert_particle(star2)
         tree.insert_particle(planet)
-        steps = 10000 #366 * 100 * 24
+        steps = 366 * 24 * 100
         dt = 60. * 60.
         accelerations_i = np.array([[n, n, n] for n in np.zeros(3.0)])
         e_i = get_system_total_energy(particles)
+
+        fig = plt.figure("Integration 3 body system")
+        ax = fig.add_subplot(111, title='3 Body')
+        #ax = plt.axes(projection='3d')
+
+        x = [star1.position[0] / sp.constants.astronomical_unit, star2.position[0] / sp.constants.astronomical_unit,
+             planet.position[0] / sp.constants.astronomical_unit]
+        y = [star1.position[1] / sp.constants.astronomical_unit, star2.position[1] / sp.constants.astronomical_unit,
+             planet.position[1] / sp.constants.astronomical_unit]
+
+        save_every = 2500
+
+        self.subplot, = ax.plot(x, y, 'r.')
+        ax.set_ylim(-30, 30)
+        ax.set_xlim(-30, 30)
+
+        original_steps = steps
+
         while steps:
             accelerations_i = leapfrog_step(dt, accelerations_i, barnes_hut_gravitational_acceleration,
-                                            particles=particles, tree=tree, theta=0.5)
+                                            particles=particles, tree=tree, theta=0.25)
 
-            accelerations_i = leapfrog_step(dt, accelerations_i, brute_force_gravitational_acceleration,
-                                            particles=particles)
+            #accelerations_i = leapfrog_step(dt, accelerations_i, brute_force_gravitational_acceleration,
+             #                               particles=particles)
 
-            #print '%s ==========================================' % steps
-            #print accelerations_i
-            #print [p.velocity for p in particles]
-            #print '%s ==========================================' % steps
-            # adjust_tree(tree, tree)
-#            tree = OctreeNode(distance_to_center=max([norm(p.position) for p in particles]))
-#            tree.insert_particle(star1)
-#            tree.insert_particle(star2)
-#            tree.insert_particle(planet)
+            try:
+                adjust_tree(tree, tree)
+            except OctreeException:
+                tree = OctreeNode(distance_to_center=max([norm(p.position) for p in particles]))
+                tree.insert_particle(star1)
+                tree.insert_particle(star2)
+                tree.insert_particle(planet)
+
 
             steps -= 1
             if steps % 1000 == 0:
                 print "Steps: %s" % steps
 
+            if steps % save_every == 0:
+
+                self.history_x1.append(star1.position[0] / sp.constants.astronomical_unit)
+                self.history_y1.append(star1.position[1] / sp.constants.astronomical_unit)
+
+                self.history_x2.append(star2.position[0] / sp.constants.astronomical_unit)
+                self.history_y2.append(star2.position[1] / sp.constants.astronomical_unit)
+
+                self.history_x3.append(planet.position[0] / sp.constants.astronomical_unit)
+                self.history_y3.append(planet.position[1] / sp.constants.astronomical_unit)
+
+
         e_f = get_system_total_energy(particles)
         self.assertAlmostEqual(e_i/e_f, 1., places=2)
+
+        ani = animation.FuncAnimation(fig, self.update, frames=original_steps / save_every, repeat=True)
+
+        plt.show()
+
+    def update(self, i):
+        x = [self.history_x1[i], self.history_x2[i], self.history_x3[i]]
+        y = [self.history_y1[i], self.history_y2[i], self.history_y3[i]]
+        self.subplot.set_data(x, y)
+        return self.subplot,
+
 
 unittest.main()

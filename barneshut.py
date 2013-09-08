@@ -14,7 +14,6 @@ from generate_cloud import get_max_distance_positions
 
 
 def barnes_hut_gravitational_acceleration(body, **kwargs):
-
     """
 
     :param body: a Particle
@@ -82,22 +81,31 @@ def adjust_tree(current_node, root_node):
             # Particle position has changed, need to reinsert!
             # Reinsert implies: changing mass and center of mass of upper level! (recursive)
 
-            new_particle = Particle(current_node.particle.position[0], current_node.particle.position[1],
-                                    current_node.particle.position[2], current_node.particle.velocity[0],
-                                    current_node.particle.velocity[1], current_node.particle.velocity[2],
-                                    current_node.particle.density, current_node.particle.mass)
-
-            remove_particle_from_center_of_mass(current_node, current_node.particle)
+            particle = current_node.particle
+            _remove_particle_from_center_of_mass(current_node, current_node.particle)
             current_node.particle = None
-            # current_node._create_empty_child_nodes()
-            root_node.insert_particle(new_particle)
+            root_node.insert_particle(particle)
     else:
         # Continue checking tree tree in next level
         for node in current_node.childnodes:
             adjust_tree(node, root_node)
 
 
-def remove_particle_from_center_of_mass(node, particle):
+def need_to_rebuild(current_node, root_node):
+    if current_node.is_external_node:
+        try:
+            if not current_node.parent_node.parent_node.parent_node.contains_particle(current_node.particle):
+                return True
+            else:
+                return False
+        except AttributeError:
+            return False
+    else:
+        # Continue checking tree tree in next level
+        return any([need_to_rebuild(node, root_node) for node in current_node.childnodes])
+
+
+def _remove_particle_from_center_of_mass(node, particle):
     """
     Substract particle contribution to center of mass and total mass of given node
     Recursively do the same for all upper levels
@@ -117,4 +125,4 @@ def remove_particle_from_center_of_mass(node, particle):
         raise ValueError('Mass can not be less than zero. Mass: %s, particle: %s' % (node.mass, str(particle)))
 
     if node.parent_node:
-        remove_particle_from_center_of_mass(node.parent_node, particle)
+        _remove_particle_from_center_of_mass(node.parent_node, particle)
