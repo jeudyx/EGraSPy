@@ -1,0 +1,4 @@
+-SET LD_LIBRARY_PATH in bashrc to /home/jeudy/libraries/mpich2-1.4.1p1/lib
+-Run it as mpirun -np 4 -host localhost python hello.py
+- in /etc/hosts, have a reference to the machine name to 127.0.0.1
+-(re)install mpich2, ./configure CFLAGS=-fPIC --enable-shared
