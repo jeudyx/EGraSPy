@@ -1,0 +1,9 @@
+{
+    "cloud_path" : "/home/jeudy/Ciencia/EGraSPy/data/small_cloud.csv",
+    "time_step" : 0,
+    "theta" : 0.5,
+    "save_frequency": 100,
+    "start_from_iteration": 0,
+    "stop_at_iteration" : 1000,
+    "verbose" : true
+}

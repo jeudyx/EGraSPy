@@ -12,6 +12,7 @@ Executable scripts:
  * generate_cloud : creates and stores the initial distribution of particles
  * results_visualization
 
+
 Modules:
 
  * astro_constants: constantes not available in scipy
@@ -47,3 +48,8 @@ Integration method:
  * Leap-frog
 
 Parallelization: MPI (with mpi4py)
+
+    * For parallel execution with mpi: mpirun -np 4 -host localhost python egrasp.py -cfg ./params/test_run.json (in this case, run in localhost in 4 processors)
+    * SET LD_LIBRARY_PATH in bashrc to ~/libraries/mpich2-1.4.1p1/lib
+    * In /etc/hosts, have a reference to the machine name to 127.0.0.1
+    * Install mpich2 with ./configure CFLAGS=-fPIC --enable-shared

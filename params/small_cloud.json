@@ -1,0 +1,10 @@
+{
+    "mass" : 1.0,
+    "n_particles" : 10,
+    "density": 1E-18,
+    "temperature": 20,
+    "path": "./data/small_cloud.csv",
+    "rotation":  0.0,
+    "variation":  0.75,
+    "center":  [0.0, 0.0, 0.0]
+}
