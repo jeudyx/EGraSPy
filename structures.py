@@ -218,6 +218,7 @@ class OctreeNode(object):
 class OctreeException(Exception):
     pass
 
+
 class Volume(object):
     """Abstract representation of any calculate_volume"""
 
