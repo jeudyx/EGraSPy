@@ -9,19 +9,19 @@ import argparse
 import numpy as np
 import json
 from mpi4py import MPI
-from structures import OctreeNode, Particle
-from barneshut import build_tree
-
+from barneshut import build_tree, barnes_hut_gravitational_acceleration
+from integration import leapfrog_step
 
 def start_simulation(cloud_path, time_step, theta, save_frequency, start_from_iteration, stop_at_iteration,
                      verbose=False):
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
-    size = comm.Get_size()
+    total_nodes = comm.Get_size()
 
     tree = None
     particles = []
+    accelerations = []
 
     if rank == 0:
         raw_vals = np.loadtxt(cloud_path, delimiter=',', skiprows=1)
@@ -30,15 +30,36 @@ def start_simulation(cloud_path, time_step, theta, save_frequency, start_from_it
         masses = raw_vals[:, 6:7]
         densities = raw_vals[:, 7:8]
         tree = build_tree(positions, velocities, masses, densities, out_particles=particles)
+        accelerations = [np.zeros(3.0) for p in particles]
+
+        if verbose:
+            print '%s processors available. Particles: %s' % (total_nodes, len(particles))
 
     tree = comm.bcast(tree, root=0)
     particles = comm.bcast(particles, root=0)
+    accelerations = comm.bcast(accelerations, root=0)
 
-    if verbose:
-        print "I am process %s. Tree -> %s" % (rank, str(tree))
-        print '============'
-        print "I am process %s. Particles -> %s" % (rank, particles)
-        print '============'
+    i = start_from_iteration
+
+    n_split = 1 + len(particles) / total_nodes
+
+    range_start = rank * n_split
+    range_end = range_start + n_split
+
+    while i < stop_at_iteration:
+        particles_chunk = particles[range_start:range_end]
+        accelerations_chunk = accelerations[range_start:range_end]
+
+        accelerations_i = leapfrog_step(time_step, accelerations_chunk, barnes_hut_gravitational_acceleration,
+                                        particles=particles_chunk, tree=tree, theta=theta)
+
+
+        if rank == 0:
+            pass
+        else:
+            pass
+
+        i += 1
 
 
 def main(argv=None):
