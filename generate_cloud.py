@@ -22,7 +22,7 @@ DEFAULT_CENTER = np.array([0., 0., 0.])
 
 class ParameterReader(object):
 
-    def __init__(self, mass, n_particles, density, temperature, path, rotation, variation, center):
+    def __init__(self, mass, n_particles, density, radius, temperature, path, rotation, variation, center, shape, gap):
         self.mass = mass
         self.n_particles = n_particles
         self.density = density
@@ -31,20 +31,47 @@ class ParameterReader(object):
         self.rotation = rotation
         self.variation = variation
         self.center = center
+        self.radius = radius
+        self.shape = shape
+        self.gap = gap
 
     @classmethod
     def from_configfile(cls, config_file_path):
-        json_data=open(config_file_path)
+        json_data = open(config_file_path)
         data = json.load(json_data)
         mass = data["mass"]
         n_particles = data["n_particles"]
-        density = data["density"]
-        temperature = data["temperature"]
         cloud_path = data["path"]
         rotation = data["rotation"]
         variation = data["variation"]
         center = data["center"]
-        return cls(mass, n_particles, density, temperature, cloud_path, rotation, variation, center)
+
+        try:
+            temperature = data["temperature"]
+        except KeyError:
+            temperature = 0
+
+        try:
+            radius = data["radius"]
+        except KeyError:
+            radius = 0
+
+        try:
+            density = data["density"]
+        except KeyError:
+            density = 0
+
+        try:
+            shape = data["shape"]
+        except KeyError:
+            shape = 'sphere'
+
+        try:
+            gap = data["gap"]
+        except KeyError:
+            gap = 0
+
+        return cls(mass, n_particles, density, radius, temperature, cloud_path, rotation, variation, center, shape, gap)
 
 def _generate_random_positions_from_a_to_b(a, b, n_particles):
     """ Generates 3D positions from a to b using: (b - a) * random_sample() + a
@@ -83,9 +110,45 @@ def _generate_sphere_position_distribution(radius, center, n_particles):
     return np.array(preliminary_positions)
 
 
-def generate_positions(radius, center, n_particles, dist_type='sphere'):
-    if dist_type == "sphere":
+def _generate_shell_position_distribution(radius, center, gap, n_particles):
+
+    """Generate particle distribution in the shape of a shell with a void from the center
+      up to gap, which is expressed in % of the radius
+
+    :param radius: radius of sphere
+    :param center: 3D vector for the center of the sphere (numpy array)
+    :param gap: A value from 0 (full sphere) to less than 1 (thin shell)
+    :param n_particles: number of particles
+    :return: numpy array of n_particles x 3 elements with 3D position
+    """
+
+    if gap >= 1.0 or gap < 0:
+        raise ValueError("The shell gap must be less than 1 and greater than 0, given: %s" % gap)
+
+    containing_sphere = Sphere(radius, center)
+    preliminary_positions = _generate_random_positions_from_a_to_b(-radius, radius, n_particles)
+
+    preliminary_positions = [tuple(p) for p in preliminary_positions
+                             if containing_sphere.contains_point(p) and np.linalg.norm(p) >= radius * gap]
+
+    current_len = len(preliminary_positions)
+
+    while current_len < n_particles:
+        extension_list = [tuple(p) for p in _generate_random_positions_from_a_to_b(-radius, radius, n_particles - current_len)
+                          if containing_sphere.contains_point(p) and np.linalg.norm(p) >= radius * gap]
+
+        preliminary_positions.extend(extension_list)
+        preliminary_positions = list(set(preliminary_positions))    # Ensure uniqueness
+        current_len = len(preliminary_positions)
+
+    return np.array(preliminary_positions)
+
+
+def generate_positions(radius, center, n_particles, shape='sphere', gap=0.0):
+    if shape == 'sphere':
         return _generate_sphere_position_distribution(radius, center, n_particles)
+    elif shape == 'shell':
+        return _generate_shell_position_distribution(radius, center, gap, n_particles)
 
 
 def generate_velocity_distribution(n_particles, rotation):
@@ -163,11 +226,13 @@ def main():
     parser.add_argument("-np", "--nparticles", help="Number of particles", default=1000)
     parser.add_argument("-d", "--rho", help="Mean density in gr/cm^3", default=1E-20)
     parser.add_argument("-t", "--temperature", help="Temperature of the cloud (in Kelvin)", default=10)
-    # parser.add_argument("-s", "--shape", help="Shape of the cloud: sphere, disc, cilinder", default='sphere')
+    parser.add_argument("-s", "--shape", help="Shape of the cloud: sphere, disc, ring, shell", default='sphere')
+    parser.add_argument("-g", "--gap", help="For shell or ring shapes, the gap from center", default=0)
     parser.add_argument("-p", "--path", help="Path", default='./data/egraspy_cloud.csv')
-    parser.add_argument("-r", "--rotation", help="Initial percentage of rotational "
+    parser.add_argument("-rot", "--rotation", help="Initial percentage of rotational "
                                                  "energy with respect to gravitational energy",
                         default=0)
+    parser.add_argument("-r", "--radius", help="Radius in meters", default=0)
     parser.add_argument("-var", "--variation", help="Maximum allowed variation percentage in "
                                                     "particles mass", default=0)
     parser.add_argument("-cfg", "--config", help="Path to a config file containing all the parameters. "
@@ -199,14 +264,20 @@ def generate_cloud(args, write_file=True):
         reader = ParameterReader.from_configfile(args.config)
     else:
         # noinspection PyArgumentList
-        reader = ParameterReader(args.mass, args.nparticles, args.rho, args.temperature,
-                                 args.path, args.rotation, args.variation, DEFAULT_CENTER)
+        reader = ParameterReader(args.mass, args.nparticles, args.rho, args.radius, args.temperature,
+                                 args.path, args.rotation, args.variation, DEFAULT_CENTER, args.shape, args.gap)
 
     # Assume for now spherical distribution centered on 0,0,0
     # Since mass comes in solar masses, and density in gr/cm³, need to convert to kg and kg/m³
     # result is expresses in parsecs
-    radius = calculate_radius(reader.mass * SUN_MASS, reader.density*1000.0)
-    positions = generate_positions(radius, reader.center, reader.n_particles)
+    if reader.density:
+        radius = calculate_radius(reader.mass * SUN_MASS, reader.density*1000.0)
+    elif reader.radius:
+        radius = reader.radius
+    else:
+        raise ValueError("Either radius or density must be provided")
+
+    positions = generate_positions(radius, reader.center, reader.n_particles, shape=reader.shape, gap=reader.gap)
     masses = generate_mass_distribution(reader.mass, reader.n_particles, reader.variation)
     velocities = generate_velocity_distribution(reader.n_particles, reader.rotation)
     if write_file:

@@ -1,0 +1,10 @@
+{
+    "mass" : 3.0023628776833748e-05,
+    "n_particles" : 1000,
+    "radius": 747989353455.0,
+    "path": "./data/sphere_1000_cloud.csv",
+    "shape" : "sphere",
+    "rotation":  0.0,
+    "variation":  0.75,
+    "center":  [0.0, 0.0, 0.0]
+}

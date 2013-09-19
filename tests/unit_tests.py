@@ -398,6 +398,8 @@ class TestCloudGeneration(unittest.TestCase):
         args.rotation = 0.
         args.variation = 0.
         args.config = None
+        args.shape = 'sphere'
+        args.gap = 0
         particles = generate_cloud(args, write_file=False)
         self.assertEqual(len(particles), 1000)
         self.assertAlmostEqual(particles[0].mass, 1. / 1000)
