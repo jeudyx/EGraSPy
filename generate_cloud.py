@@ -205,7 +205,7 @@ def _adjust_mass(masses_list, total_mass):
     return masses_list
 
 
-def _write_values(masses, positions, velocities, density, temperature, path):
+def write_values(masses, positions, velocities, density, temperature, path):
     with open(path, 'wb') as csvfile:
         datawriter = csv.writer(csvfile, delimiter=',')
         datawriter.writerow('x,y,z,vx,vy,vz,mass,rho,temp'.split(','))
@@ -281,7 +281,7 @@ def generate_cloud(args, write_file=True):
     masses = generate_mass_distribution(reader.mass, reader.n_particles, reader.variation)
     velocities = generate_velocity_distribution(reader.n_particles, reader.rotation)
     if write_file:
-        _write_values(masses, positions, velocities, reader.density, reader.temperature, reader.cloud_path)
+        write_values(masses, positions, velocities, reader.density, reader.temperature, reader.cloud_path)
 
     # For testing purposes only?
     particles_list = []

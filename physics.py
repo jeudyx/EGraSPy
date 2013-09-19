@@ -27,7 +27,8 @@ def gravitational_acceleration(ri, rj, mj):
 
     diff = rj - ri
     diff_scalar = norm(diff)
-    return sp.constants.G * mj * (diff / (diff_scalar * diff_scalar * diff_scalar))
+    result = sp.constants.G * mj * (diff / (diff_scalar * diff_scalar * diff_scalar))
+    return result
 
 
 def kinetic_energy(m, v):

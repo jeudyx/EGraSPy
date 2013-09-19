@@ -1,4 +1,5 @@
 __author__ = 'Jeudy Blanco - jeudyx@gmail.com'
+__author__ = 'Jeudy Blanco - jeudyx@gmail.com'
 
 # -*- coding: UTF-8 -*-
 
@@ -23,7 +24,7 @@ class TestParticleDistributionVisualization(unittest.TestCase):
     def setUp(self):
         self.points = _generate_sphere_position_distribution(10, [0., 0., 0.], 10000)
 
-    def xtest_sphere(self):
+    def test_sphere(self):
         x = self.points[:,0]
         y = self.points[:,1]
         z = self.points[:,2]
@@ -72,6 +73,7 @@ class TestCalculationsIntegrationAndTree(unittest.TestCase):
         self.args.rotation = 0.
         self.args.variation = 0.75
         self.args.config = None
+        self.args.shape = 'sphere'
         self.particles = generate_cloud(self.args)
 
     def test_write_read_cloud(self):
@@ -120,7 +122,7 @@ class TestCalculationsIntegrationAndTree(unittest.TestCase):
 
 class TestParticleGenerationVisualization(unittest.TestCase):
 
-    def xtest_generate_cloud(self):
+    def test_generate_cloud(self):
 
         args = MagicMock()
         args.config = '../params/test_cloud.json'
@@ -147,7 +149,7 @@ class TestIntegration(unittest.TestCase):
     PATH = './data/testcloud.csv'
 
     def setUp(self):
-        path = './data/functional_test_cloud.csv'
+        path = './data/shell_tiny_cloud.csv'
         raw_vals = np.loadtxt(path, delimiter=',', skiprows=1)
         positions = raw_vals[:, 0:3]
         velocities = raw_vals[:, 3:6]
@@ -167,14 +169,6 @@ class TestIntegration(unittest.TestCase):
         self.subplot = None
 
 
-    def xtest_energy_conserved(self):
-        accelerations_i = np.zeros(len(self.particles))
-        e_i = get_system_total_energy(self.particles)
-        for i in range(0, 10):
-            accelerations_i = leapfrog_step(self.particles, self.tree, 1000000., accelerations_i)
-        e_f = get_system_total_energy(self.particles)
-        self.assertAlmostEqual(e_i, e_f, places=2)
-
     def test_small_system_conservation(self):
         star1 = Particle(-10.9 * 149597870691.0, 0., 0., 0., 2.1E3, 0., 0., SUN_MASS*1.09)
         star2 = Particle(12.8 * 149597870691.0, 0., 0., 0., -2.1E3, 0., 0., SUN_MASS*0.9)
@@ -184,7 +178,7 @@ class TestIntegration(unittest.TestCase):
         tree.insert_particle(star1)
         tree.insert_particle(star2)
         tree.insert_particle(planet)
-        steps = 366 * 24 * 100
+        steps = 366 * 24 * 10
         dt = 60. * 60.
         accelerations_i = np.array([[n, n, n] for n in np.zeros(3.0)])
         e_i = get_system_total_energy(particles)
